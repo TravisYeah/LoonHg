@@ -2,6 +2,8 @@ library(data.table)
 library(ggplot2)
 library(NADA)
 
+setwd('D:/Projects/USGS_R/loons')
+
 ## load loon blood
 loonBlood <- fread("../LoonAnalysis/LoonHGblood.csv")
 loonBlood[ , fishLakeID := LakeID]

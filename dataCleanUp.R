@@ -1,5 +1,7 @@
 library(data.table)
 
+setwd('D:/Projects/USGS_R/loons')
+
 ## Load data, grab columns we need
 fishData <- fread("./inputData/ALLFISH2015-HgPCBPFOS_MN.csv")
 fishData[ , unique(WATERWAY)]
@@ -10,7 +12,6 @@ fishDataUse <- fishData[ , list(WATERWAY, DOWID, YEAR, Spec, Anat, Nofish,
 
 fishDataUse2 <- copy(fishDataUse[ complete.cases(fishDataUse), ])
 summary(fishDataUse2)
-
 
 ## Check species code for codes not part of key
 ## and make sure we are using the same code for all species
@@ -47,7 +48,6 @@ fishDataUse2[ Anat == "PLUG", Anat := "FILET"]
 fishDataUse2[ , unique(Anat)]
 
 fishDataUse2[ , length(HGppm), by = Anat]
-
 
 ## Remvoe data without enough types per cut
 ## AnatToUse <- fishDataUse2[ , length(HGppm), by = Anat][ 1:3, Anat]

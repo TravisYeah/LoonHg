@@ -27,5 +27,3 @@ summary(with(d, glm(log(conc + 1) ~ x + group - 1,
 m3 <- with(d, glm(conc + 1 ~ x + group - 1,
                   family = 'Gamma'))
 summary(m3, dispersion = 1)
-?with
-?glm
