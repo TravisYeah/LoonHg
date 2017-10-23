@@ -1,4 +1,0 @@
-## Simulate data
-
-
-df <- data.frame(Slope = rep(
