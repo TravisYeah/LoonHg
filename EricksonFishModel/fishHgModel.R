@@ -197,6 +197,8 @@ modelOut
 
 fishData[ , length(HGppmLog), by = sampleEvent]
 ## predict(modelOut, c(log(6 + 1), "YP_WHORG", "1002300_2012"))
+predictor = 
+predict(modelOut, c(log(12 + 1), "YP_WHORG", "1002300_2012"))
 
 fishDataPred <- copy(fishData[, list(LgthcmLog, SppCut, sampleEvent)])
 

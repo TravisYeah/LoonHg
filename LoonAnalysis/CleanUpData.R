@@ -1,6 +1,7 @@
 library(data.table)
 library(lubridate)
 ## Load loon Contaminant data
+setwd('D:/Projects/USGS_R/loons/LoonAnalysis')
 list.files("./RawData/")
 dt1 <- fread("./RawData/1409727_FINAL_EXCEL_17_Nov_14_1743.csv")
 dt2 <- fread("./RawData/1409729_FINAL_EXCEL_17_Nov_14_1740.csv")

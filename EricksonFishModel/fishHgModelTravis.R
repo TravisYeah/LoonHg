@@ -48,8 +48,8 @@ loonBlood[ grep("3024100|3024102|9006700", fishLakeID), fishLakeID := "3024101"]
 loonBlood[ grep("East Fox", Lake), fishLakeID := "18029700"]
 #################TODO this creates a column of 
 #################NA values since only EAST FOX waterways will get values for id
-#fishData[ grep("EAST FOX", WATERWAY), fishLakeID := "18029700"] 
-#fishData[ grep("EAST FOX", WATERWAY), ] #shown waterway EAST FOX rows here
+fishData[ grep("EAST FOX", WATERWAY), fishLakeID := "18029700"]
+fishData[ grep("EAST FOX", WATERWAY), ] #shown waterway EAST FOX rows here
 #################Trying to fix by creating id col from loonblood
 
 loonBlood
@@ -98,8 +98,8 @@ length(sampleEventRemove)
 
 ## May need line in code to save loon lakes
 eventDT[ total < minEvents & lakeID %in%loonBloodLakeIDs, ]
-fishData
 
+# fishData = fishData[ ! sampleEvent %in% sampleEventRemove, ]
 fishData <- copy(fishData[ ! sampleEvent %in% sampleEventRemove, ])
 
 print(eventDT[ prop > 0, ][order(prop, decreasing = TRUE)], 110)
@@ -118,6 +118,7 @@ sppCutDT[ order(total, decreasing = TRUE)]
 sppCutRemove <- sppCutDT[ total <= 5, SppCut]
 sppCutRemove
 
+# fishData=fishData[ ! SppCut %in% sppCutRemove, ]
 fishData <- copy(fishData[ ! SppCut %in% sppCutRemove, ])
 
 ## Need repeate removing lakes with fewer than 5 fish
@@ -132,6 +133,7 @@ sampleEventRemove
 eventDT[ total < minEvents & lakeID %in%loonBloodLakeIDs, ]
 fishData
 
+# fishData=fishData[ ! sampleEvent %in% sampleEventRemove, ]
 fishData <- copy(fishData[ ! sampleEvent %in% sampleEventRemove, ])
 fishData
 
@@ -141,18 +143,41 @@ fishData[ , length(HGppm), by = sampleEvent][ order(V1, decreasing = FALSE),][ V
 
 fishData[ , Censor := FALSE]
 fishData[ NDyes == 1, Censor := TRUE]
+fishData$NDyes
 
+###### test BEGIN
+a = data.frame(fishData$HGppmLog, fishData$Censor, fishData$LgthcmLog, fishData$SppCut, fishData$sampleEvent)
+names(a) = c("HGppmLog", "Censor", "LgthcmLog", "SppCut", "sampleEvent")
+str(a)
+b = data.frame("HGppmLog"=as.numeric(NA), "Censor"=TRUE, "LgthcmLog"=log(12 + 1), "SppCut"="YP_WHORG", "sampleEvent"="1002300_2012")
+str(b)
 
-## Add back in missing data
-## missE <- as.numeric(c("03024101", "29015104", "34015802", "69037801", "77008401"))
-## fishDataRaw[ ,unique(DOWID)]
-## fishDataRaw[   missE %in% DOWID,]
-## str(fishDataRaw)
-## missingEvents
+st <- system.time(
+  ## modelOut1 <- fishData[ 1:100,
+  ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
+  ##                                  sampleEvent - 1)]
+  modelOut <-
+    cenreg( Cen(fishData$HGppmLog, fishData$Censor) ~
+              fishData$LgthcmLog : fishData$SppCut  +
+              fishData$sampleEvent - 1, dist = 'gaussian')
+)
+
+###### test END
+
+# Add back in missing data
+# missE <- as.numeric(c("03024101", "29015104", "34015802", "69037801", "77008401"))
+# fishDataRaw[ , unique(DOWID)]
+# fishDataRaw[   missE %in% DOWID, ]
+# str(fishDataRaw)
+# missingEvents
 
 fishData
 # Run model
 # rm(modelOut)
+a=fishData$LgthcmLog
+b=fishData$SppCut
+c=fishData$sampleEvent
+
 st <- system.time(
     ## modelOut1 <- fishData[ 1:100,
     ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
@@ -170,17 +195,12 @@ load("fishHGmodel.rda")
 ## summary(modelOut)
 
 ############################################### TODO 
-########## 
-########## Warning message:
-########## In `[.data.table`(fishData, , `:=`(resids, NULL)) :
-########## Adding new column 'resids' then assigning NULL (deleting it).
-########## 
 ########## Warning message:
 ########## In log(1 - 2 * pnorm(width/2)) : NaNs produced
 ########## 
 fishData[ , resids := NULL]
 fishData[ , resids := residuals(modelOut)]
-
+grepl
 
 #write.csv("fishDataWithResids.csv", x = fishData, row.names = FALSE)
 #write.csv(loonBlood,"D:/projects/usgs_r/loons/ericksonfishmodel/loonBloodTravis.csv", row.names = FALSE)
@@ -194,11 +214,31 @@ fishData[ , resids := residuals(modelOut)]
 load("fishHGmodel.rda") #load modelOut
 #head(fishData)
 #head(fishDataRaw)
-modelOut
+modelOut@survreg$xlevels[2][[1]][grep("1002300_2012",modelOut@survreg$xlevels[2][[1]])]
 
-fishData[ , length(HGppmLog), by = sampleEvent]
+fishData$sampleEvent
 ## predict(modelOut, c(log(6 + 1), "YP_WHORG", "1002300_2012"))
+data.frame("fishData$LgthcmLog"=log(3 + 1), "fishData$SppCut"="YP_WHORG", "fishData$sampleEvent"="1002300_2012")
+res=predict(modelOut@survreg, 
+            data=useData,
+            type="response",
+            na.action=na.pass)
 
+useData[nrow(useData),]
+test=data.frame(fishData$HGppmLog,fishData$Censor,fishData$LgthcmLog, fishData$SppCut, fishData$sampleEvent)
+useData=rbind(test,data.frame("fishData$HGppmLog"=NA,"fishData$Censor"=NA,"fishData$LgthcmLog"=log(12 + 1), "fishData$SppCut"="YP_WHORG", "fishData$sampleEvent"="1002300_2012"))
+# useData=rbind(useData,data.frame("fishData$LgthcmLog"=log(12 + 1), "fishData$SppCut"="YP_WHORG", "fishData$sampleEvent"="1002300_2012"))
+st <- system.time(
+  # modelOut1 <- fishData[ 1:100,
+  #                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
+  #                                  sampleEvent - 1)]
+  # model <-
+  #   cenreg( Cen(useData$HGppmLog, useData$Censor) ~
+  #             useData$LgthcmLog : useData$SppCut  +
+  #             useData$sampleEvent - 1, dist = 'gaussian')
+)
+
+#####################################end testing model predictions
 fishDataPred <- copy(fishData[, list(LgthcmLog, SppCut, sampleEvent)])
 
 fishData[ , SppSampleEvent := paste( sampleEvent, Spec, Anat)]
