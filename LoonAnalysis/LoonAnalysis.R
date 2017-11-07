@@ -1,4 +1,5 @@
 ## Load libraries 
+install.packages('psych', 'GGally', 'lme4', 'lmerTest')
 library(data.table)
 library(psych)
 library(ggplot2)
@@ -6,6 +7,9 @@ library(GGally)
 library(lme4)
 library(lmerTest)
 library(lubridate)
+
+# set working directory
+setwd('D:/projects/USGS_R/loons/LoonAnalysis')
 
 ## Load data
 

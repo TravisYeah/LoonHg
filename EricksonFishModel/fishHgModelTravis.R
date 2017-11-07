@@ -151,17 +151,17 @@ fishData[ NDyes == 1, Censor := TRUE]
 ## missingEvents
 
 fishData
-## Run model
-## rm(modelOut)
-## st <- system.time(
-##     ## modelOut1 <- fishData[ 1:100,
-##     ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
-##     ##                                  sampleEvent - 1)]
-##     modelOut <-
-##         cenreg( Cen(fishData$HGppmLog, fishData$Censor) ~
-##                    fishData$LgthcmLog : fishData$SppCut  +
-##                        fishData$sampleEvent - 1, dist = 'gaussian')
-##     )
+# Run model
+# rm(modelOut)
+st <- system.time(
+    ## modelOut1 <- fishData[ 1:100,
+    ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
+    ##                                  sampleEvent - 1)]
+    modelOut <-
+        cenreg( Cen(fishData$HGppmLog, fishData$Censor) ~
+                   fishData$LgthcmLog : fishData$SppCut  +
+                       fishData$sampleEvent - 1, dist = 'gaussian')
+    )
 
 ## print(st)/
 ## save(modelOut, file = "fishHGmodel.rda")
@@ -180,6 +180,7 @@ load("fishHGmodel.rda")
 ########## 
 fishData[ , resids := NULL]
 fishData[ , resids := residuals(modelOut)]
+
 
 #write.csv("fishDataWithResids.csv", x = fishData, row.names = FALSE)
 #write.csv(loonBlood,"D:/projects/usgs_r/loons/ericksonfishmodel/loonBloodTravis.csv", row.names = FALSE)
@@ -308,23 +309,29 @@ predictedPlotYPwhorg
 
 ############################################################################### PLOTS END
 
+nrow(fishData)
 fishData
 loonBlood
 
 ## Extract coef to mannual estimate lakes effects
 
 coefEst <- coef(modelOut)
+length(coefEst)
 head(coefEst)
+tail(coefEst)
+length(coefEst)
 coefEst[2386] #last row with date in column name      => fishData$sampleEvent9006200_1996
 coefEst[2387] #first row without date in column name  => fishData$LgthcmLog:fishData$SppCutBGS_FILSK
 coefEst = coefEst[1:2386] #subset data with dates at end of column names
 
-# names(coefEst) <- gsub("fishData\\$sampleEvent", "", names(coefEst))
-# head(coefEst)
-# coefEstDT <- data.table(ce = coefEst, sampleEvent = names(coefEst))
-# head(coefEstDT)
-# coefEstDT[ , LakeID :=  gsub("(\\d+)_(\\d+)", "\\1", sampleEvent)]
-# coefEstDT[ , Year :=  gsub("(\\d+)_(\\d+)", "\\2", sampleEvent)]
+length(names(coefEst))
+length(grep("fishData\\$sampleEvent", names(coefEst)))
+
+names(coefEst) <- gsub("fishData\\$sampleEvent", "", names(coefEst))
+coefEstDT <- data.table(ce = coefEst, sampleEvent = names(coefEst))
+head(coefEstDT)
+coefEstDT[ , LakeID :=  gsub("(\\d+)_(\\d+)", "\\1", sampleEvent)]
+coefEstDT[ , Year :=  gsub("(\\d+)_(\\d+)", "\\2", sampleEvent)]
 
 unique(coefEstDT$Year) #check that only years exist in list
 
@@ -337,13 +344,82 @@ setkey(coefEstDT, "LakeID")
 coefEstDT <- lastYearDT[coefEstDT]
 coefEstDT
 
-############################# TODO
-############################# WHAT IS numeric(dim(loonBlood)[1]) DOING????
-############################# IT ONLY RETURNS ZEROS
+############################# NOT WORKING
 loonBlood[ , useYear := numeric(dim(loonBlood)[1])]
 loonBlood[ useYear == 0, useYear := NA]
 unique(loonBlood$useYear)
 
+## Attemping to fix (want useYear to be closest year closest to sampled Hg sample) ############################################ load("D:/Projects/USGS_R/loons/EricksonFishModel/20171106environment.RData")
+#find closest year sampled in lake to fish sample year
+closest = function (year, yearList) {
+  ord = sort(yearList)
+  i = which.min(abs(year-ord))
+  return(ord[i])
+}
+#test
+closest(2000, c(2001,1999, 2004))
+
+df = data.frame("id"=0,"fishSampleYear"=0, "closestYear"=0)
+cnt = 1
+for(id in unique(loonBlood$LakeID)) {
+  if(id %in% fishData$DOWID) {
+    sub = unique(fishData[DOWID == id, YEAR])
+    sub2 = unique(loonBlood[LakeID == id, Year])
+    print("id:")
+    print(id)
+    print(sub)
+    print(sub2)
+    for(years in sub2) {
+      closestYear = closest(years,sub)
+      print(closestYear)
+      df[cnt,] <- c(id, years, closestYear)
+      cnt = cnt + 1
+    }
+  }
+}
+df$fishSampleYear = as.numeric(df$fishSampleYear)
+
+loonBlood$useYear = 0
+for(i in nrow(df)) {
+  loonBlood$useYear = loonBlood[loonBlood$fishLakeID == df$id[i] && loonBlood$Year == df$fishSampleYear[i], df$closestYear[i]]
+}
+loonBlood$useYear
+joined_loonblood = loonBlood %>% left_join(df, by=c("fishLakeID"="id", "Year"="fishSampleYear"))
+loonBlood[, useYear := joined_loonblood$closestYear]
+
+joined[DOWID == "77008900",]
+fishData %>% left_join(loonBlood, by=c("DOWID" = "LakeID"))
+joined = loonBlood %>% inner_join(loonBlood, by=c("DOWID" = "LakeID"))
+joined %>% 
+  distinct(DOWID,YEAR,Year,fishLakeID) %>% 
+  group_by(DOWID, Year) %>% 
+  summarize(yearFinal = closest(Year, joined[which(DOWID == DOWID), YEAR]))
+
+years = as.data.frame(fishData) %>% 
+                filter(DOWID %in% loonBlood$LakeID) %>%
+                distinct(DOWID,YEAR) %>%
+                group_by(DOWID) %>%
+                summarize(yearClosest = closest(loonBlood[loonBlood$LakeID == "02009100", Year], YEAR))
+head(years)
+tail(years)
+  
+loonBlood
+fishData
+length(which(unique(fishData$DOWID) %in% unique(loonBlood$LakeID)))
+
+for(id in loonBlood$LakeID) {
+  years = as.data.frame(fishData) %>% group_by(DOWID,YEAR) %>% 
+  print(years)
+  index = min(abs(years-loonBlood[LakeID == id,Year]))
+}
+02009100
+as.data.frame(fishData) %>% filter(DOWID == 02009100)
+use = 1
+lastYearDT
+loonBlood[ , useYear := numeric(dim(loonBlood)[1])]
+loonBlood[ useYear == 0, useYear := NA]
+unique(loonBlood$useYear)
+######################################################################################################################################
 
 loonBandsToUse <- loonBlood[ !LakeID %in% missingLoonLakes, Band]
 loonBlood[, length(Mass), by = list(Band, Year)][ V1 > 1,]
@@ -371,6 +447,7 @@ loonBlood
 loonBlood[ , fishSampleEvent := paste( fishLakeID, useYear, sep = "_")]
 setkey(loonBlood, "fishSampleEvent")
 setkey(coefEstDT, "sampleEvent")
+joined_loonblood[ , fishSampleEvent := paste( fishLakeID, useYear, sep = "_")]
 
 coefEstDT[ , c('LakeID', 'lastYear', 'Year') := NULL]
 setnames(coefEstDT, "ce", "intercept")
