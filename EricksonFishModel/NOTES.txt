@@ -1,0 +1,3 @@
+modelOutGoodColumnNames.rda
+This file contains a saved model with column names that do not contain "$". This helped call the predict function. Richard's version is in fishHGmodel.rda.
+

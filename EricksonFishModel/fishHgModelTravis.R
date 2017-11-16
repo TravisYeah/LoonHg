@@ -18,6 +18,7 @@ fishData <- fread("./inputData/fishUse.csv")
 ## Reformat data structure
 fishData[ , DOWID := as.character(DOWID)]
 fishData[ , HGppmLog  := log(HGppm + 1)]
+fishData[ , HGppbLog  := log(HGppm*1000 + 1)]
 fishData[ , Lgthcm := Lgthin * 2.54]
 fishData[ , LgthinLog := log(Lgthin + 1)]
 fishData[ , LgthcmLog := log(Lgthcm + 1)]
@@ -145,24 +146,41 @@ fishData[ , Censor := FALSE]
 fishData[ NDyes == 1, Censor := TRUE]
 fishData$NDyes
 
-###### test BEGIN
-a = data.frame(fishData$HGppmLog, fishData$Censor, fishData$LgthcmLog, fishData$SppCut, fishData$sampleEvent)
-names(a) = c("HGppmLog", "Censor", "LgthcmLog", "SppCut", "sampleEvent")
-str(a)
-b = data.frame("HGppmLog"=as.numeric(NA), "Censor"=TRUE, "LgthcmLog"=log(12 + 1), "SppCut"="YP_WHORG", "sampleEvent"="1002300_2012")
-str(b)
-
+############################################################################################################ test BEGIN
+HGppbLog = fishData$HGppbLog
+Censor = fishData$Censor
+LgthcmLog = fishData$LgthcmLog
+SppCut = fishData$SppCut
+sampleEvent = fishData$sampleEvent
 st <- system.time(
   ## modelOut1 <- fishData[ 1:100,
   ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
   ##                                  sampleEvent - 1)]
   modelOut <-
-    cenreg( Cen(fishData$HGppmLog, fishData$Censor) ~
-              fishData$LgthcmLog : fishData$SppCut  +
-              fishData$sampleEvent - 1, dist = 'gaussian')
+    cenreg( Cen(HGppbLog, Censor) ~
+              LgthcmLog : SppCut  +
+              sampleEvent - 1, 
+            dist = 'gaussian',
+            x=T)
 )
+# save(modelOut, file="modelOutGoodColumnNamesExclude.rda")
+# load("modelOutGoodColumnNamesExclude.rda")
+save(modelOut, file="modelOutHGppbLog.rda")
+load("modelOutHGppbLog.rda")
 
-###### test END
+hold = fishData
+fishData = data.frame("LgthcmLog"=log(12 + 1), "SppCut"="YP_WHORG", "sampleEvent"="1002300_2012")
+predict(modelOut@survreg, newdata=fishData)
+preds = cbind(hold, modelOut@survreg$linear.predictors)
+preds[SppCut == "YP_WHORG",]
+plot(preds$LgthcmLog, preds$V2, xlab="Log Length (cm)", ylab="Log Hg (ppb)")
+abline(0,1,col="red")
+plot(hold$HGppbLog, preds$V2, xlab="Obs Log Hg (ppb)", ylab="Pred Log Hg (ppb)")
+abline(0, 1, col="red")
+
+#test END
+
+################################################# test END
 
 # Add back in missing data
 # missE <- as.numeric(c("03024101", "29015104", "34015802", "69037801", "77008401"))
@@ -193,6 +211,8 @@ st <- system.time(
 load("fishHGmodel.rda")
 ## modelOut
 ## summary(modelOut)
+predict(modelOut@survreg, newdata=data.frame("fishData$SppCut"="YP_WHORG", "fishData$sampleEvent"="1002300_2012"))
+
 
 ############################################### TODO 
 ########## Warning message:
