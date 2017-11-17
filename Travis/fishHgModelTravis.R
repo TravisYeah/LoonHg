@@ -137,10 +137,11 @@ fishData
 
 ## How many samples per 
 fishData[ , length(HGppm), by = SppCut][ order(V1, decreasing = FALSE),]
-fishData[ , length(HGppm), by = sampleEvent][ order(V1, decreasing = FALSE),][ V1 <=5,]
+fishData[ , length(HGppm), by = sampleEvent][ order(V1, decreasing = FALSE),][ V1 <=5, ]
 
 fishData[ , Censor := FALSE]
 fishData[ NDyes == 1, Censor := TRUE]
+
 
 
 ## Add back in missing data
