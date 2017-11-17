@@ -150,7 +150,7 @@ fishData[ NDyes == 1, Censor := TRUE]
 ## str(fishDataRaw)
 ## missingEvents
 
-# fishData
+fishData
 ## Run model
 ## rm(modelOut)
 ## st <- system.time(
@@ -165,52 +165,11 @@ fishData[ NDyes == 1, Censor := TRUE]
 
 ## print(st)/
 ## save(modelOut, file = "fishHGmodel.rda")
-# load("fishHGmodel.rda")
+load("fishHGmodel.rda")
 ## modelOut
 ## summary(modelOut)
 
-
-###########################  HERE  ####################################
-
-
-load("modelOutHGppbLog.rda")
-SaveFishData = fishData
-fishData = data.frame(LgthcmLog=log(12+1), SppCut="YP_WHORG", sampleEvent="1002300_2012")
-predict(modelOut@survreg, newdata=fishData)
-fishDataResults=cbind(SaveFishData, modelOut@survreg$linear.predictors)
-colnames(fishDataResults) = c(colnames(fishDataResults)[1:20], "est_HgLogPpb")
-loonBlood
-test_join=sqldf("SELECT * FROM fishDataResults AS a JOIN loonBlood AS b ON a.DOWID = b.fishLakeID AND a.YEAR = b.UseYear")
-
-#create column for "use year" (closest sampled lake year for loonbloods)
-loonBlood[, UseYear := 0]
-
-#subset lake ID's and years in loon bloods and fishDataResults
-for(lake in unique(loonBlood$fishLakeID)) {
-  subLoon = subset(loonBlood, fishLakeID == lake)
-  subFishData = subset(fishDataResults, DOWID == lake)
-  print(nrow(subFishData))
-  print(lake)
-  if(nrow(subFishData) > 0) {
-    for(year in subLoon$Year) {
-      subLoonYear = subset(subLoon, Year == year)
-      closestYear = subFishData$YEAR[which(abs(subFishData$YEAR-year) == min(abs(subFishData$YEAR-year)))[1]]
-      #update loonblood UseYear with closest year
-      loonBlood[fishLakeID == lake & Year == year, "UseYear"] = closestYear
-    }
-  }
-}
-
-#example
-subLoonYear = subset(loonBlood, fishLakeID == '77008900' & Year == 2014)
-subFishData = subset(fishDataResults, DOWID == '77008900')
-subLoonYear$Year[1]
-unique(subFishData$YEAR)
-subFishData$YEAR[which(abs(subFishData$YEAR-year) == min(abs(subFishData$YEAR-year)))[1]]
-
-#######################################################################
-
-###############################################  
+############################################### TODO 
 ########## 
 ########## Warning message:
 ########## In `[.data.table`(fishData, , `:=`(resids, NULL)) :
@@ -230,13 +189,13 @@ fishData[ , resids := residuals(modelOut)]
 #fishData = read.csv("fishDataWithResids.csv")
 #fishDataRaw = fread("./inputData/fishUse.csv")
 #loonBlood = read.csv("loonBloodTravis.csv")
-# load("fishHGmodel.rda") #load modelOut
+load("fishHGmodel.rda") #load modelOut
 #head(fishData)
 #head(fishDataRaw)
-# modelOut
+modelOut
 
 fishData[ , length(HGppmLog), by = sampleEvent]
-predict(modelOut, c(log(6 + 1), "YP_WHORG", "1002300_2012"))
+## predict(modelOut, c(log(6 + 1), "YP_WHORG", "1002300_2012"))
 
 fishDataPred <- copy(fishData[, list(LgthcmLog, SppCut, sampleEvent)])
 
@@ -245,111 +204,111 @@ fishData[ , SppSampleEvent := paste( sampleEvent, Spec, Anat)]
 fishData[, Predicted := modelOut@survreg$linear.predictors]
 
 ############################################################################### PLOTS
-# ## Plot residules
-# lgthResid <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
-#   geom_point(alpha = 0.5) +
-#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
-#   scale_color_manual(values = c("blue", "orange", "black")) +
-#   stat_smooth(method = 'lm')
-# #ggsave('lgthResid.jpg', lgthResid, width = 14, height = 8.5)
-# lgthResid
-# 
-# lgthResidhist2d <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
-#   geom_point(alpha = 0.25) +
-#   stat_density2d() + 
-#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
-#   scale_color_gradient(trans = "log")
-# lgthResidhist2d
-# #ggsave('lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
-# 
-# 
-# sppCutResid <- ggplot(fishData, aes(x = resids)) +
-#   geom_histogram() +
-#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
-#   scale_color_manual(values = c("blue", "orange", "black"))
-# sppCutResid
-# #ggsave('sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
-# 
-# loglengthHist <- ggplot(fishData, aes(x = LgthcmLog)) +
-#   geom_histogram() +
-#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
-#   scale_color_manual(values = c("blue", "orange", "black"))
-# loglengthHist
-# #ggsave('loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
-# 
-# fishData
-# 
-# ## Plot residules by event
-# sampleEventPlot <- fishData[ YEAR > 2000, length(resids),
-#                              by = list(sampleEvent)][ V1 > 30, sampleEvent]
-# 
-# eventResid <- ggplot(fishData[ sampleEvent %in% sampleEventPlot, ], aes(x = resids)) +
-#   geom_histogram() +
-#   facet_wrap( ~ sampleEvent, ncol = 7, scales = 'free') +
-#   scale_color_manual(values = c("blue", "orange", "black"))
-# eventResid
-# #ggsave('eventResid.jpg', eventResid, width = 14, height = 8.5)
-# 
-# ypByAnat <- ggplot(fishData[ Spec == "YP", ],
-#                    aes(x = LgthcmLog, resids, color = Anat, size = Nofish)) +
-#   geom_point(alpha = 0.5) +
-#   scale_color_manual(values = c("blue", "orange", "black")) 
-# ypByAnat
-# #ggsave('ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
-# 
-# fishData
-# loonBlood
-# ## Plot residules by event
-# 
-# sampleEventPlot <-
-#   fishData[ , length(resids),
-#             by = list(sampleEvent, Spec, SppSampleEvent)][ V1 >  30, SppSampleEvent ]
-# sampleEventPlot
-# 
-# lgthSampleEvent <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
-#                           aes(x = LgthcmLog,
-#                               y = resids, color = Anat)) +
-#   geom_point(alpha = 0.5)  +
-#   facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
-#   scale_color_manual(values = c("blue", "orange", "black"))
-# 
-# lgthSampleEvent
-# #ggsave('lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
-# 
-# 
-# fishData
-# 
-# str(modelOut)
-# 
-# lgthSampleEvent2 <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
-#                            aes(x = LgthcmLog,
-#                                y = Predicted, color = Anat)) +
-#   geom_point(alpha = 0.5)  +
-#   facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
-#   scale_color_manual(values = c("blue", "orange", "black")) + 
-#   stat_smooth(method = 'lm') 
-# ## coord_cartesian(xlim = c(0, 3.5))
-# lgthSampleEvent2
-# #ggsave('lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
-# 
-# fishData
-# 
-# predictedPlot <- ggplot(data = fishData, aes(x = HGppmLog, Predicted)) +
-#   geom_point() + stat_smooth(method = 'lm')
-# 
-# #ggsave("predictedPlot.pdf", predictedPlot)
-# 
-# 
-# predictedPlotYPwhorg <- ggplot(data = fishData[ grep("YP_WHORG", SppCut),],
-#                                aes(x = HGppmLog, Predicted)) +
-#   geom_point() + stat_smooth(method = 'lm')
-# predictedPlotYPwhorg
-# #ggsave("predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
+## Plot residules
+lgthResid <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black")) +
+  stat_smooth(method = 'lm')
+#ggsave('lgthResid.jpg', lgthResid, width = 14, height = 8.5)
+lgthResid
+
+lgthResidhist2d <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
+  geom_point(alpha = 0.25) +
+  stat_density2d() + 
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
+  scale_color_gradient(trans = "log")
+lgthResidhist2d
+#ggsave('lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
+
+
+sppCutResid <- ggplot(fishData, aes(x = resids)) +
+  geom_histogram() +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+sppCutResid
+#ggsave('sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
+
+loglengthHist <- ggplot(fishData, aes(x = LgthcmLog)) +
+  geom_histogram() +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+loglengthHist
+#ggsave('loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
+
+fishData
+
+## Plot residules by event
+sampleEventPlot <- fishData[ YEAR > 2000, length(resids),
+                             by = list(sampleEvent)][ V1 > 30, sampleEvent]
+
+eventResid <- ggplot(fishData[ sampleEvent %in% sampleEventPlot, ], aes(x = resids)) +
+  geom_histogram() +
+  facet_wrap( ~ sampleEvent, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+eventResid
+#ggsave('eventResid.jpg', eventResid, width = 14, height = 8.5)
+
+ypByAnat <- ggplot(fishData[ Spec == "YP", ],
+                   aes(x = LgthcmLog, resids, color = Anat, size = Nofish)) +
+  geom_point(alpha = 0.5) +
+  scale_color_manual(values = c("blue", "orange", "black")) 
+ypByAnat
+#ggsave('ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
+
+fishData
+loonBlood
+## Plot residules by event
+
+sampleEventPlot <-
+  fishData[ , length(resids),
+            by = list(sampleEvent, Spec, SppSampleEvent)][ V1 >  30, SppSampleEvent ]
+sampleEventPlot
+
+lgthSampleEvent <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
+                          aes(x = LgthcmLog,
+                              y = resids, color = Anat)) +
+  geom_point(alpha = 0.5)  +
+  facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+
+lgthSampleEvent
+#ggsave('lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
+
+
+fishData
+
+str(modelOut)
+
+lgthSampleEvent2 <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
+                           aes(x = LgthcmLog,
+                               y = Predicted, color = Anat)) +
+  geom_point(alpha = 0.5)  +
+  facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black")) + 
+  stat_smooth(method = 'lm') 
+## coord_cartesian(xlim = c(0, 3.5))
+lgthSampleEvent2
+#ggsave('lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
+
+fishData
+
+predictedPlot <- ggplot(data = fishData, aes(x = HGppmLog, Predicted)) +
+  geom_point() + stat_smooth(method = 'lm')
+
+#ggsave("predictedPlot.pdf", predictedPlot)
+
+
+predictedPlotYPwhorg <- ggplot(data = fishData[ grep("YP_WHORG", SppCut),],
+                               aes(x = HGppmLog, Predicted)) +
+  geom_point() + stat_smooth(method = 'lm')
+predictedPlotYPwhorg
+#ggsave("predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
 
 ############################################################################### PLOTS END
-# 
-# fishData
-# loonBlood
+
+fishData
+loonBlood
 
 ## Extract coef to mannual estimate lakes effects
 

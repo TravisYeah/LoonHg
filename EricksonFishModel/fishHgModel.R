@@ -180,7 +180,6 @@ load("fishHGmodel.rda")
 ########## 
 fishData[ , resids := NULL]
 fishData[ , resids := residuals(modelOut)]
-
 #write.csv("fishDataWithResids.csv", x = fishData, row.names = FALSE)
 #write.csv(loonBlood,"D:/projects/usgs_r/loons/ericksonfishmodel/loonBloodTravis.csv", row.names = FALSE)
 
@@ -197,8 +196,6 @@ modelOut
 
 fishData[ , length(HGppmLog), by = sampleEvent]
 ## predict(modelOut, c(log(6 + 1), "YP_WHORG", "1002300_2012"))
-predictor = 
-predict(modelOut, c(log(12 + 1), "YP_WHORG", "1002300_2012"))
 
 fishDataPred <- copy(fishData[, list(LgthcmLog, SppCut, sampleEvent)])
 
