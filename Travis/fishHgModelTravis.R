@@ -154,15 +154,15 @@ fishData[ NDyes == 1, Censor := TRUE]
 # fishData
 ## Run model
 ## rm(modelOut)
-## st <- system.time(
-##     ## modelOut1 <- fishData[ 1:100,
-##     ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
-##     ##                                  sampleEvent - 1)]
-##     modelOut <-
-##         cenreg( Cen(fishData$HGppmLog, fishData$Censor) ~
-##                    fishData$LgthcmLog : fishData$SppCut  +
-##                        fishData$sampleEvent - 1, dist = 'gaussian')
-##     )
+st <- system.time(
+    ## modelOut1 <- fishData[ 1:100,
+    ##                       cenreg( Cen(HGppmLog, Censor) ~ LgthinLog : SppCut  +
+    ##                                  sampleEvent - 1)]
+    modelOut <-
+        cenreg( Cen(fishData$HGppmLog, fishData$Censor) ~
+                   fishData$LgthcmLog : fishData$SppCut  +
+                       fishData$sampleEvent - 1, dist = 'gaussian')
+    )
 
 ## print(st)/
 ## save(modelOut, file = "fishHGmodel.rda")
