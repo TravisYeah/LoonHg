@@ -220,6 +220,10 @@ library(sqldf)
 results=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
 results
 
+# converting ppm to ppb
+library(data.table)
+results[, HGppbLog := log(results$HGppm*1000 + 1)]
+
 # Then we run our model (must create named lists to avoid programming issues)
 HGppbLog = log(results$HGppm*1000 + 1)
 Censor = results$Censor
@@ -239,4 +243,112 @@ save(modelOut, file = "fishHGmodelTravisFinal.rda")
 # load the model
 # load("fishHGmodelTravisFinal.rda")
 
-################################# run the analytics
+# Join results with the data
+results=cbind(results, Predicted=modelOut@survreg$linear.predictors)
+head(results)
+
+# Add residuals column
+results = cbind(results, resids = residuals(modelOut))
+
+################################# run the analytics (Erickson's plots) /w Travis' edits
+
+#************************* Log Length Inches vs residuals per species
+lgthResid <- ggplot(results, aes(x = LgthinLog, resids)) +
+  geom_point(alpha = 0.5) +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black")) +
+  stat_smooth(method = 'lm')
+#ggsave('lgthResid.jpg', lgthResid, width = 14, height = 8.5)
+lgthResid
+
+# density plot
+lgthResidhist2d <- ggplot(results, aes(x = LgthinLog, resids)) +
+  geom_point(alpha = 0.25) +
+  stat_density2d() +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
+  scale_color_gradient(trans = "log")
+lgthResidhist2d
+#ggsave('lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
+
+
+sppCutResid <- ggplot(results, aes(x = resids)) +
+  geom_histogram() +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+sppCutResid
+#ggsave('sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
+
+loglengthHist <- ggplot(results, aes(x = LgthinLog)) +
+  geom_histogram() +
+  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+loglengthHist
+#ggsave('loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
+
+## Plot residules by event
+sampleEventPlot <- results[ YEAR > 2000, length(resids),
+                             by = list(sampleEvent)][ V1 > 30, sampleEvent]
+
+eventResid <- ggplot(results[ sampleEvent %in% sampleEventPlot, ], aes(x = resids)) +
+  geom_histogram() +
+  facet_wrap( ~ sampleEvent, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+eventResid
+#ggsave('eventResid.jpg', eventResid, width = 14, height = 8.5)
+
+ypByAnat <- ggplot(results[ results$Spec == "YP", ],
+                   aes(x = LgthinLog, resids, color = Anat, size = Nofish)) +
+  geom_point(alpha = 0.5) +
+  scale_color_manual(values = c("blue", "orange", "black"))
+ypByAnat
+#ggsave('ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
+
+
+## Plot residules by event
+sampleEventPlot <-
+  results[ , length(resids),
+            by = list(sampleEvent, Spec, SppSampleEvent)][ V1 >  30, SppSampleEvent ]
+sampleEventPlot
+
+lgthSampleEvent <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
+                          aes(x = LgthinLog,
+                              y = resids, color = Anat)) +
+  geom_point(alpha = 0.5)  +
+  facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black"))
+
+lgthSampleEvent
+#ggsave('lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
+
+
+results
+
+str(modelOut)
+
+lgthSampleEvent2 <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
+                           aes(x = LgthinLog,
+                               y = Predicted, color = Anat)) +
+  geom_point(alpha = 0.5)  +
+  facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
+  scale_color_manual(values = c("blue", "orange", "black")) +
+  stat_smooth(method = 'lm')
+## coord_cartesian(xlim = c(0, 3.5))
+lgthSampleEvent2
+#ggsave('lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
+
+results
+
+#******************** Ploting loon Log Hh ppb against predicted fish Log Hg ppb with linear model
+predictedPlot <- ggplot(data = results, aes(x = HGppbLog, Predicted)) +
+  geom_point() + stat_smooth(method = 'lm')
+predictedPlot
+
+#ggsave("predictedPlot.pdf", predictedPlot)
+
+
+predictedPlotYPwhorg <- ggplot(data = results[ grep("YP_WHORG", SppCut),],
+                               aes(x = HGppbLog, y = Predicted)) +
+  geom_point() + stat_smooth(method = 'lm')
+predictedPlotYPwhorg
+#ggsave("predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
+results[ grep("YP_WHORG", SppCut),]
