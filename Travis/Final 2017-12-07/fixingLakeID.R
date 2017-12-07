@@ -3,10 +3,10 @@
 library(data.table, lib = 'D:/library/R')
 library(ggplot2, lib = 'D:/library/R')
 library(NADA, lib = 'D:/library/R')
-setwd('D:/Projects/USGS_R/loons/EricksonFishModel')
+setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 ## load loon blood
-loonBlood <- fread("../LoonAnalysis/LoonHGblood.csv")
+loonBlood <- fread("./inputData/LoonHGblood.csv")
 loonBlood[ , fishLakeID := LakeID]
 loonBlood[ , fishLakeID := gsub( "^0", "", fishLakeID)]
 
@@ -218,11 +218,10 @@ loonBloodFinal = subset(loonBlood, UseYear != 0)
 # Now we can do our final join to view joined data
 library(sqldf)
 results=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
-results
+results <- data.table(results)
 
 # converting ppm to ppb
-library(data.table)
-results[, HGppbLog := log(results$HGppm*1000 + 1)]
+results[, HGppbLog := log(HGppm*1000 + 1)]
 
 # Then we run our model (must create named lists to avoid programming issues)
 HGppbLog = log(results$HGppm*1000 + 1)
@@ -250,6 +249,17 @@ head(results)
 # Add residuals column
 results = cbind(results, resids = residuals(modelOut))
 
+# Write perch & loon joined data/results for loon analysis
+write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year, fishLakeID)],
+          file = "./UseYear/perchLoonHGData.csv", row.names = FALSE)
+
+
+
+
+
+
+
+
 ################################# run the analytics (Erickson's plots) /w Travis' edits
 
 #************************* Log Length Inches vs residuals per species
@@ -258,7 +268,7 @@ lgthResid <- ggplot(results, aes(x = LgthinLog, resids)) +
   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
   scale_color_manual(values = c("blue", "orange", "black")) +
   stat_smooth(method = 'lm')
-#ggsave('lgthResid.jpg', lgthResid, width = 14, height = 8.5)
+ggsave('./plots/lgthResid.jpg', lgthResid, width = 14, height = 8.5)
 lgthResid
 
 # density plot
@@ -268,7 +278,7 @@ lgthResidhist2d <- ggplot(results, aes(x = LgthinLog, resids)) +
   facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
   scale_color_gradient(trans = "log")
 lgthResidhist2d
-#ggsave('lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
+ggsave('./plots/lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
 
 
 sppCutResid <- ggplot(results, aes(x = resids)) +
@@ -276,14 +286,14 @@ sppCutResid <- ggplot(results, aes(x = resids)) +
   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
   scale_color_manual(values = c("blue", "orange", "black"))
 sppCutResid
-#ggsave('sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
+ggsave('./plots/sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
 
 loglengthHist <- ggplot(results, aes(x = LgthinLog)) +
   geom_histogram() +
   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
   scale_color_manual(values = c("blue", "orange", "black"))
 loglengthHist
-#ggsave('loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
+ggsave('./plots/loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
 
 ## Plot residules by event
 sampleEventPlot <- results[ YEAR > 2000, length(resids),
@@ -294,14 +304,14 @@ eventResid <- ggplot(results[ sampleEvent %in% sampleEventPlot, ], aes(x = resid
   facet_wrap( ~ sampleEvent, ncol = 7, scales = 'free') +
   scale_color_manual(values = c("blue", "orange", "black"))
 eventResid
-#ggsave('eventResid.jpg', eventResid, width = 14, height = 8.5)
+ggsave('./plots/eventResid.jpg', eventResid, width = 14, height = 8.5)
 
 ypByAnat <- ggplot(results[ results$Spec == "YP", ],
                    aes(x = LgthinLog, resids, color = Anat, size = Nofish)) +
   geom_point(alpha = 0.5) +
   scale_color_manual(values = c("blue", "orange", "black"))
 ypByAnat
-#ggsave('ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
+ggsave('./plots/ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
 
 
 ## Plot residules by event
@@ -318,7 +328,7 @@ lgthSampleEvent <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
   scale_color_manual(values = c("blue", "orange", "black"))
 
 lgthSampleEvent
-#ggsave('lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
+ggsave('./plots/lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
 
 
 results
@@ -334,7 +344,7 @@ lgthSampleEvent2 <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
   stat_smooth(method = 'lm')
 ## coord_cartesian(xlim = c(0, 3.5))
 lgthSampleEvent2
-#ggsave('lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
+ggsave('./plots/lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
 
 results
 
@@ -343,12 +353,13 @@ predictedPlot <- ggplot(data = results, aes(x = HGppbLog, Predicted)) +
   geom_point() + stat_smooth(method = 'lm')
 predictedPlot
 
-#ggsave("predictedPlot.pdf", predictedPlot)
+ggsave("./plots/predictedPlot.pdf", predictedPlot)
 
 
 predictedPlotYPwhorg <- ggplot(data = results[ grep("YP_WHORG", SppCut),],
                                aes(x = HGppbLog, y = Predicted)) +
   geom_point() + stat_smooth(method = 'lm')
 predictedPlotYPwhorg
-#ggsave("predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
+ggsave("./plots/predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
 results[ grep("YP_WHORG", SppCut),]
+

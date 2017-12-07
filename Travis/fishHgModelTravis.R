@@ -37,6 +37,10 @@ fishData[ WATERWAY == "BIG BIRCH", DOWID := '77008401']
 ## Change VERMILION to match EAST VERMILION USED with WQ
 fishData[ WATERWAY == "VERMILION", DOWID := '69037801']
 
+## Edit lake names
+fishData$WATERWAY[grep("(TAMARACK)", fishData$WATERWAY)]
+loonBlood
+
 loonBlood
 fishData
 
@@ -173,13 +177,17 @@ st <- system.time(
 
 ###########################  HERE  ####################################
 
-
+# Load the Log Hg (ppm) model
 load("modelOutHGppbLog.rda")
-SaveFishData = fishData
-fishData = data.frame(LgthcmLog=log(12+1), SppCut="YP_WHORG", sampleEvent="1002300_2012")
-predict(modelOut@survreg, newdata=fishData)
-fishDataResults=cbind(SaveFishData, modelOut@survreg$linear.predictors)
-colnames(fishDataResults) = c(colnames(fishDataResults)[1:20], "est_HgLogPpb")
+
+# Hold a backup for comparison
+saveFishData = fishData
+
+#
+#fishData = data.frame(LgthcmLog=log(12+1), SppCut="YP_WHORG", sampleEvent="1002300_2012")
+#predict(modelOut@survreg, newdata=fishData)
+#fishDataResults=cbind(SaveFishData, modelOut@survreg$linear.predictors)
+#colnames(fishDataResults) = c(colnames(fishDataResults)[1:20], "est_HgLogPpb")
 loonBlood
 test_join=sqldf("SELECT * FROM fishDataResults AS a JOIN loonBlood AS b ON a.DOWID = b.fishLakeID AND a.YEAR = b.UseYear")
 
