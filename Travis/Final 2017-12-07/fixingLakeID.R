@@ -157,9 +157,6 @@ loonBlood[grep("Big Birch", Lake), LakeFixed := "Big Birch"]
 loonBlood[grep("Arrowhead", Lake), LakeFixed := "Arrowhead"]
 loonBlood[grep("Monongalia", Lake), LakeFixed := "Monongalia"]
 
-#fixing fish lake names (removing parenthesis that explain a location within a lake)
-fishData[grep]
-
 #fixed loon lake names
 unique(loonBlood$LakeFixed)
 
@@ -192,7 +189,7 @@ sort(unique(loonBlood$LakeFixedLower))
 loonBlood[grep("Rabbit|rabbit", loonBlood$Lake),]
 
 # If we are focusing on just lakes (not portions of a lake), let's remove the words specifying positions
-fishData[grep("rabbit", WaterwayLower), WaterwayLower := "rabbit"]
+# fishData[grep("rabbit", WaterwayLower), WaterwayLower := "rabbit"]
 
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
 loonBlood[, UseYear := 0]
@@ -217,7 +214,18 @@ loonBloodFinal = subset(loonBlood, UseYear != 0)
 
 # Now we can do our final join to view joined data
 library(sqldf)
+
+test=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.YEAR = b.UseYear")
+test2=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear WHERE a.DOWID != b.LakeID")
 results=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
+unique(results[ grep("tamarac", results$Lake, ignore.case=T) ]$Lake)
+unique(results[ grep("vermilion", results$Lake, ignore.case=T) ]$Lake)
+unique(results[ grep("monongalia", results$Lake, ignore.case=T) ]$Lake)
+unique(results[ grep("eagle", results$Lake, ignore.case=T) ]$Lake)
+unique(results[ grep("arrow", results$Lake, ignore.case=T) ]$Lake)
+unique(results[ grep("wild|rice", results$Lake, ignore.case=T) ]$Lake)
+unique(results$Lake)
+
 results <- data.table(results)
 
 # converting ppm to ppb

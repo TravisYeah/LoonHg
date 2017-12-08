@@ -62,13 +62,18 @@ SppToKeep <- fishDataUse3[ , length(HGppm), by = Spec][ V1 > 30, Spec]
 fishDataUse4 <- copy(fishDataUse3[ Spec %in%  SppToKeep, ])
 hist(fishDataUse4[ , YEAR])
 
-# Fix waterway names to match loon lake names
-fishDataUse4[ grep("EAGLE", WATERWAY), WATERWAY := "EAGLE" ]
-fishDataUse4[ grep("MONONGALIA", WATERWAY) ]
+# Find names mismatched to loons
+unique(fishDataUse4[ grep("tamarac", WATERWAY, ignore.case=T) ]$WATERWAY)
+unique(fishDataUse4[ grep("vermilion", WATERWAY, ignore.case=T) ]$WATERWAY)
+unique(fishDataUse4[ grep("monongalia", WATERWAY, ignore.case=T) ]$WATERWAY)
+unique(fishDataUse4[ grep("eagle", WATERWAY, ignore.case=T) ]$WATERWAY)
+unique(fishDataUse4[ grep("AUTO", WATERWAY, ignore.case=T) ]$WATERWAY)
 
-# Fix waterway ID's
-fishDataUse4[ grep("EAGLE", WATERWAY), DOWID := 69028503 ]
-fishDataUse4[ grep("VERMIL", WATERWAY) ]
+# Correct mismatched names
+fishDataUse4[ grep("tamarac", WATERWAY, ignore.case=T) , WATERWAY:= "TAMARACK"]
+fishDataUse4[ grep("LITTLE VERMILION", WATERWAY, ignore.case=F), WATERWAY:= "EAST VERMILION"]
+fishDataUse4[ grep("EAGLES NEST #3", WATERWAY, ignore.case=F), WATERWAY:= "EAGLES NEST"]
+fishDataUse4[ grep("AUTO", WATERWAY, ignore.case=F) , WATERWAY:= "Arrowhead [Auto]"]
 
 ## Currently using all years of data
 write.csv(file = "./inputData/fishUse.csv", fishDataUse4)

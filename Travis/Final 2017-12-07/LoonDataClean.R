@@ -64,11 +64,15 @@ dtUse[ grep("Rabbit", Lake), Lake := gsub("(East|West) (Rabbit)", "\\2 (\\1 Port
 dtUse[ Lake == "South Tamarack", Lake := "South Tamarac"]
 dtUse[ grep("Wild Rice", Lake), Lake := "Wild Rice"]
 dtUse[ grep("South Turtle", Lake), Lake := "South Turtle"]
-dtUse[ grep("Tamarac", Lake), Lake := "tamarack"]
-dtUse[ grep("ermilion", Lake), Lake := "vermilion"]
-dtUse[ grep("Monongalia", Lake), Lake:= "Monongalia" ]
-# Adding more corrections
-  
+# Additional name changes
+dtUse[ grep("tamarac", Lake, ignore.case=T) , Lake := "Tamarack"]
+dtUse[ grep("monongalia", Lake, ignore.case=T) , Lake := "Monongalia"]
+
+unique(dtUse[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
+unique(dtUse[ grep("vermilion", Lake, ignore.case=T) ]$Lake)
+unique(dtUse[ grep("monongalia", Lake, ignore.case=T) ]$Lake)
+unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
+
 ## Need to remove Marsh
 dtUse[ , unique(Lake)]
 
@@ -227,6 +231,13 @@ wqLakes[ LOC_DESC == "WEST_FOX", LakeID := 18029700]
 wqLakes[ LOC_DESC == "ANNA", LakeID := 56044800]
 wqLakes[ LOC_DESC == "STUMP", LakeID := 73009100]
 
+# Add lake name corrections
+dtUse[ grep("tamarac", Lake, ignore.case=T), Lake := "Tamarack" ]
+dtUse[ grep("vermilion", Lake, ignore.case=T), Lake := "Vermilion"]
+dtUse[ grep("monongalia", Lake, ignore.case=T), Lake := "Monongalia" ]
+unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
+unique(dtUse[ grep("arrow", Lake, ignore.case=T) ]$Lake)
+
 setnames(wqLakes, 'LOC_DESC', 'WQ_Lakes')
 setnames(loonLakes, 'Lake', 'Loon_Lakes')
 
@@ -311,8 +322,8 @@ write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
 
 ## Now, merge in Hg model 
 getwd()
-list.files("../UseYear")
-perchHG <- fread("../UseYear/perchLoonHGData.csv")
+list.files("./UseYear")
+perchHG <- fread("./UseYear/perchLoonHGData.csv")
 perchHG[ Lake == "Loon", LakeID := '111111111']
 perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
 
