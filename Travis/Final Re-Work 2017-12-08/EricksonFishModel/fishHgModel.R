@@ -61,6 +61,7 @@ fishData[, WATERWAY := sapply(WATERWAY, tolower)]
 #fix last few lake names
 loonBlood[ Lake == "monongalia - middle fork crow river", Lake := "monongalia"]
 loonBlood[ Lake == "mantrap (west arm)", Lake := "mantrap"]
+loonBlood[ Lake == "big birch (ne portion)", Lake := "big birch"]
 
 ## merge data
 loonBloodLakeIDs <- loonBlood[ , unique(Lake)]
@@ -135,11 +136,11 @@ missingEvents
 
 fishData
 # Run model
-HGppbLog = log(results$HGppm*1000 + 1)
-Censor = results$Censor
-LengthInchesLog = results$LgthinLog
-SppCut = results$SppCut
-SampleEvent = results$sampleEvent
+HGppbLog = log(fishData$HGppm*1000 + 1)
+Censor = fishData$Censor
+LengthInchesLog = fishData$LgthinLog
+SppCut = fishData$SppCut
+SampleEvent = fishData$sampleEvent
 st <- system.time(
     modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
 )
