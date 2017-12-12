@@ -1,8 +1,6 @@
+.libPaths('D:/library/R')
 library(data.table)
-library(tibble)
-#install.packages('tibble', dependencies = T)
-
-setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
+setwd('D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/EricksonFishModel')
 
 ## Load data, grab columns we need
 fishData <- fread("./inputData/ALLFISH2015-HgPCBPFOS_MN.csv")
@@ -12,8 +10,15 @@ head(fishData)
 fishDataUse <- fishData[ , list(WATERWAY, DOWID, YEAR, Spec, Anat, Nofish,
                                 Lgthin, HGppm, Hgcode)]
 
+# Fix waterway names
+fishDataUse[ grep("tamarac", WATERWAY, ignore.case=T) , WATERWAY:= "TAMARACK"]
+fishDataUse[ grep("LITTLE VERMILION", WATERWAY, ignore.case=F), WATERWAY:= "EAST VERMILION"]
+fishDataUse[ grep("EAGLES NEST #3", WATERWAY, ignore.case=F), WATERWAY:= "EAGLES NEST"]
+fishDataUse[ grep("AUTO", WATERWAY, ignore.case=F) , WATERWAY:= "Arrowhead [Auto]"]
+
 fishDataUse2 <- copy(fishDataUse[ complete.cases(fishDataUse), ])
 summary(fishDataUse2)
+
 
 ## Check species code for codes not part of key
 ## and make sure we are using the same code for all species
@@ -34,7 +39,7 @@ for( spp in fishInAFS){
 }
 
 fishDataUse2[ , Spec := factor(Spec)]
-fishDataUse2[ Spec %in% fishKey[, AFS], unique(Spec)]
+fishDataUse2[ Spec %in% fishKey[, AFS], unique(Spec)] 
 fishDataUse2[ , unique(Spec)]
 
 fishDataUse2[ !Spec %in% fishKey[, STORET], unique(Spec)]
@@ -51,7 +56,8 @@ fishDataUse2[ , unique(Anat)]
 
 fishDataUse2[ , length(HGppm), by = Anat]
 
-## Remove data without enough types per cut
+
+## Remvoe data without enough types per cut
 ## AnatToUse <- fishDataUse2[ , length(HGppm), by = Anat][ 1:3, Anat]
 AnatToUse <- c("FILSK", "FILET", "WHORG")
 fishDataUse3 <- copy(fishDataUse2[ Anat %in% AnatToUse, ])
@@ -62,23 +68,18 @@ SppToKeep <- fishDataUse3[ , length(HGppm), by = Spec][ V1 > 30, Spec]
 fishDataUse4 <- copy(fishDataUse3[ Spec %in%  SppToKeep, ])
 hist(fishDataUse4[ , YEAR])
 
-# Find names mismatched to loons
-unique(fishDataUse4[ grep("tamarac", WATERWAY, ignore.case=T) ]$WATERWAY)
-unique(fishDataUse4[ grep("vermilion", WATERWAY, ignore.case=T) ]$WATERWAY)
-unique(fishDataUse4[ grep("monongalia", WATERWAY, ignore.case=T) ]$WATERWAY)
-unique(fishDataUse4[ grep("eagle", WATERWAY, ignore.case=T) ]$WATERWAY)
-unique(fishDataUse4[ grep("AUTO", WATERWAY, ignore.case=T) ]$WATERWAY)
+fishDataUse5 <- fishDataUse4[ YEAR > 1979,  ]
+dim(fishDataUse4)
+dim(fishDataUse5)
 
-# Correct mismatched names
-fishDataUse4[ grep("tamarac", WATERWAY, ignore.case=T) , WATERWAY:= "TAMARACK"]
-fishDataUse4[ grep("LITTLE VERMILION", WATERWAY, ignore.case=F), WATERWAY:= "EAST VERMILION"]
-fishDataUse4[ grep("EAGLES NEST #3", WATERWAY, ignore.case=F), WATERWAY:= "EAGLES NEST"]
-fishDataUse4[ grep("AUTO", WATERWAY, ignore.case=F) , WATERWAY:= "Arrowhead [Auto]"]
+fishDataUse5[ grep("PLEASANT", WATERWAY),]
+fishDataUse5[ grep("BLACK", WATERWAY),]
 
 ## Currently using all years of data
 write.csv(file = "./inputData/fishUse.csv", fishDataUse4)
 
-unique(fishDataUse4$WATERWAY)[which(unique(toupper(fishDataUse4$WATERWAY)) %in% unique(toupper(dtWide$Lake)))]
+
+
 
 
 #####

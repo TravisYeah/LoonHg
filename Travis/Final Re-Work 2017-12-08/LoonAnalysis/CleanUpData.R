@@ -1,7 +1,7 @@
 library(data.table)
 library(lubridate)
+setwd('D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/LoonAnalysis')
 ## Load loon Contaminant data
-setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 list.files("./RawData/")
 dt1 <- fread("./RawData/1409727_FINAL_EXCEL_17_Nov_14_1743.csv")
 dt2 <- fread("./RawData/1409729_FINAL_EXCEL_17_Nov_14_1740.csv")
@@ -64,14 +64,8 @@ dtUse[ grep("Rabbit", Lake), Lake := gsub("(East|West) (Rabbit)", "\\2 (\\1 Port
 dtUse[ Lake == "South Tamarack", Lake := "South Tamarac"]
 dtUse[ grep("Wild Rice", Lake), Lake := "Wild Rice"]
 dtUse[ grep("South Turtle", Lake), Lake := "South Turtle"]
-# Additional name changes
 dtUse[ grep("tamarac", Lake, ignore.case=T) , Lake := "Tamarack"]
-dtUse[ grep("monongalia", Lake, ignore.case=T) , Lake := "Monongalia"]
-
-unique(dtUse[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("vermilion", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("monongalia", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
+dtUse[ grep("onongalia", Lake, ignore.case=T) , Lake := "Monongalia"]
 
 ## Need to remove Marsh
 dtUse[ , unique(Lake)]
@@ -102,8 +96,8 @@ dtUse[ grep("Big Birch" , Lake), LakeID := '77008401']
 dtUse[ grep("Big Birch" , Lake), Lake := "Big Birch (NE portion)"]
 
 ## Clean up Monogalia Lake (has two sublakes in system)
-dtUse[ grep("Monongalia", Lake), LakeID := '34015800']
-dtUse
+dtUse[ grep("Monongalia", Lake), LakeID := '34015801']
+
 dtUse[ grep("Crow River", SAMPLENAME), Lake := "Monongalia - Middle Fork Crow River"]
 dtUse[ grep("Crow River", Lake), LakeID := '34015802']
 
@@ -174,7 +168,7 @@ dtWide[ grep("Loon", Lake), LakeID :=  '111111111']
 ############################################################
 ############################################################
 ## load in water quliaty data
-dWQ <- fread("./WQ Model Data/WATERQUALITY_ALL_LAKES_20July2017.csv")
+dWQ <- fread("../WQ Model Data/WATERQUALITY_ALL_LAKES_20July2017.csv")
 
 ## Change loon marsh to have the same dummy ID used elsewhere in code
 dWQ[ grep("LOON", LOC_DESC), LOC_ID := '111111111']
@@ -230,13 +224,6 @@ wqLakes[ grepl("MANTRAP", LOC_DESC), LakeID := 29015104]
 wqLakes[ LOC_DESC == "WEST_FOX", LakeID := 18029700]
 wqLakes[ LOC_DESC == "ANNA", LakeID := 56044800]
 wqLakes[ LOC_DESC == "STUMP", LakeID := 73009100]
-
-# Add lake name corrections
-dtUse[ grep("tamarac", Lake, ignore.case=T), Lake := "Tamarack" ]
-dtUse[ grep("vermilion", Lake, ignore.case=T), Lake := "Vermilion"]
-dtUse[ grep("monongalia", Lake, ignore.case=T), Lake := "Monongalia" ]
-unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("arrow", Lake, ignore.case=T) ]$Lake)
 
 setnames(wqLakes, 'LOC_DESC', 'WQ_Lakes')
 setnames(loonLakes, 'Lake', 'Loon_Lakes')
@@ -312,19 +299,33 @@ setkey(dWQ5, 'LakeID')
 ## Merge data together
 dtThree <- copy(dWQ5[dtWide])
 
-write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
+unique(dtWide$Lake)
+
+write.csv(x = dtWide, file = "LoonHGblood.csv")
+
+
+
+
+
+
 
 
 ###################
+## RUN THE MODEL ##
 ###################
-#### RUN MODEL ####
-###################
-###################
+
+
+
+
+
+
+
+
 
 ## Now, merge in Hg model 
 getwd()
-list.files("./UseYear")
-perchHG <- fread("./UseYear/perchLoonHGData.csv")
+list.files("../EricksonFishModel")
+perchHG <- fread("../EricksonFishModel/perchLoonHGData.csv")
 perchHG[ Lake == "Loon", LakeID := '111111111']
 perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
 
@@ -353,7 +354,7 @@ dtFour[ grepl('MUD_MONOGALIA', LOC_DESC), perchHG := dtFour[ grepl('MONOGALIA_MI
 
 dtFour[ is.na(perchHG), ]
 
-write.csv(file = "./FinalData/LoonData.csv",
+write.csv(file = "./LoonData.csv",
           x = dtFour, row.names = FALSE)
 
 

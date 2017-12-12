@@ -1,5 +1,4 @@
 .libPaths('D:/library/R')
-.libPaths()
 library(data.table, lib = 'D:/library/R')
 library(ggplot2, lib = 'D:/library/R')
 library(NADA, lib = 'D:/library/R')
@@ -208,6 +207,7 @@ for(lake in unique(loonBlood$LakeFixedLower)) {
 
 # UseYear == 0 indicates that there were not matching fish lake names for that loon lake name
 loonBlood
+unique(loonBlood$LakeFixedLower)
 
 # Remove missing data
 loonBloodFinal = subset(loonBlood, UseYear != 0)
@@ -218,7 +218,8 @@ library(sqldf)
 test=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.YEAR = b.UseYear")
 test2=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear WHERE a.DOWID != b.LakeID")
 results=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
-unique(results[ grep("tamarac", results$Lake, ignore.case=T) ]$Lake)
+unique(results[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
+unique(results$LakeFixedLower)
 unique(results[ grep("vermilion", results$Lake, ignore.case=T) ]$Lake)
 unique(results[ grep("monongalia", results$Lake, ignore.case=T) ]$Lake)
 unique(results[ grep("eagle", results$Lake, ignore.case=T) ]$Lake)
@@ -229,7 +230,7 @@ unique(results$Lake)
 results <- data.table(results)
 
 # converting ppm to ppb
-results[, HGppbLog := log(HGppm*1000 + 1)]
+# results[, HGppbLog := log(HGppm*1000 + 1)]
 
 # Then we run our model (must create named lists to avoid programming issues)
 HGppbLog = log(results$HGppm*1000 + 1)
@@ -243,7 +244,7 @@ st <- system.time(
               LengthInchesLog : SppCut  +
               SampleEvent - 1, dist = 'gaussian')
 )
-
+modelOut
 # save the model
 save(modelOut, file = "fishHGmodelTravisFinal.rda")
 
@@ -258,7 +259,8 @@ head(results)
 results = cbind(results, resids = residuals(modelOut))
 
 # Write perch & loon joined data/results for loon analysis
-write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year, fishLakeID)],
+results=data.frame(results)
+write.csv(x = results[ , with(results,list(LakeID, Lake, perchHG, useYear, Year, fishLakeID))],
           file = "./UseYear/perchLoonHGData.csv", row.names = FALSE)
 
 
