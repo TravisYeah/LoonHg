@@ -1,3 +1,4 @@
+.libPaths('D:/library/R')
 library(data.table)
 library(ggplot2)
 library(NADA)
@@ -64,8 +65,8 @@ loonBlood[ Lake == "mantrap (west arm)", Lake := "mantrap"]
 loonBlood[ Lake == "big birch (ne portion)", Lake := "big birch"]
 
 ## merge data
-loonBloodLakeIDs <- loonBlood[ , unique(Lake)]
-missingLoonLakes <- loonBloodLakeIDs[!loonBloodLakeIDs %in% fishData[ , unique(WATERWAY)]]
+loonBloodLakeIDs <- loonBlood[ , unique(fishLakeID)]
+missingLoonLakes <- loonBloodLakeIDs[!loonBloodLakeIDs %in% fishData[ , unique(DOWID)]]
 missingLoonLakes
 loonBlood[ !LakeID %in% missingLoonLakes, unique(Lake)]
 
@@ -134,6 +135,7 @@ fishDataRaw[   missE %in% DOWID,]
 str(fishDataRaw)
 missingEvents
 
+
 fishData
 # Run model
 HGppbLog = log(fishData$HGppm*1000 + 1)
@@ -141,27 +143,30 @@ Censor = fishData$Censor
 LengthInchesLog = fishData$LgthinLog
 SppCut = fishData$SppCut
 SampleEvent = fishData$sampleEvent
-st <- system.time(
-    modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
-)
-print(st)
-save(modelOut, file = "fishHGmodel.rda")
-# load("fishHGmodel.rda")
+# st <- system.time(
+#     modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
+# )
+# print(st)
+# save(modelOut, file = "fishHGmodel.rda")
+load("fishHGmodel.rda")
 # summary(modelOut)
 
 # Get model residuals
 fishData[ , resids := NULL]
 fishData[ , resids := residuals(modelOut)]
 
+# Add columns with correct units
+fishData[, HGppbLog := log(HGppm*1000 + 1)]
+
 write.csv("fishDataWithResids.csv", x = fishData, row.names = FALSE)
 
-fishData[ , length(HGppmLog), by = sampleEvent]
+fishData[ , length(HGppbLog), by = sampleEvent]
 # predict(modelOut, c(log(6 + 1), "YP_WHORG", "1002300_2012"))
 
-fishDataPred <- copy(fishData[, list(LgthcmLog, SppCut, sampleEvent)])
+fishDataPred <- copy(fishData[, list(LgthinLog, SppCut, sampleEvent)])
 
 ## Plot residules
-lgthResid <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
+lgthResid <- ggplot(fishData, aes(x = LgthinLog, resids)) +
     geom_point(alpha = 0.5) +
         facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
             scale_color_manual(values = c("blue", "orange", "black")) +
@@ -169,7 +174,7 @@ lgthResid <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
 ggsave('lgthResid.jpg', lgthResid, width = 14, height = 8.5)
 lgthResid
 
-lgthResidhist2d <- ggplot(fishData, aes(x = LgthcmLog, resids)) +
+lgthResidhist2d <- ggplot(fishData, aes(x = LgthinLog, resids)) +
     geom_point(alpha = 0.25) +
     stat_density2d() + 
         facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
@@ -185,14 +190,12 @@ sppCutResid <- ggplot(fishData, aes(x = resids)) +
 sppCutResid
 ggsave('sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
 
-loglengthHist <- ggplot(fishData, aes(x = LgthcmLog)) +
+loglengthHist <- ggplot(fishData, aes(x = LgthinLog)) +
     geom_histogram() +
         facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
             scale_color_manual(values = c("blue", "orange", "black"))
 loglengthHist
 ggsave('loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
-
-fishData
 
 ## Plot residules by event
 sampleEventPlot <- fishData[ YEAR > 2000, length(resids),
@@ -206,14 +209,13 @@ eventResid
 ggsave('eventResid.jpg', eventResid, width = 14, height = 8.5)
 
 ypByAnat <- ggplot(fishData[ Spec == "YP", ],
-       aes(x = LgthcmLog, resids, color = Anat, size = Nofish)) +
+       aes(x = LgthinLog, resids, color = Anat, size = Nofish)) +
     geom_point(alpha = 0.5) +
         scale_color_manual(values = c("blue", "orange", "black")) 
 ypByAnat
 ggsave('ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
 
 
-fishData
 ## Plot residules by event
 
 fishData[ , SppSampleEvent := paste( sampleEvent, Spec, Anat)]
@@ -224,7 +226,7 @@ sampleEventPlot <-
 sampleEventPlot
 
 lgthSampleEvent <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
-                          aes(x = LgthcmLog,
+                          aes(x = LgthinLog,
                               y = resids, color = Anat)) +
     geom_point(alpha = 0.5)  +
         facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
@@ -233,14 +235,10 @@ lgthSampleEvent <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
 lgthSampleEvent
 ggsave('lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
 
-fishData
-
-str(modelOut)
-
 fishData[, Predicted := modelOut@survreg$linear.predictors]
 
 lgthSampleEvent2 <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
-                          aes(x = LgthcmLog,
+                          aes(x = LgthinLog,
                               y = Predicted, color = Anat)) +
     geom_point(alpha = 0.5)  +
         facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
@@ -250,55 +248,66 @@ lgthSampleEvent2 <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
 lgthSampleEvent2
 ggsave('lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
 
-fishData
-
-predictedPlot <- ggplot(data = fishData, aes(x = HGppmLog, Predicted)) +
+predictedPlot <- ggplot(data = fishData, aes(x = HGppbLog, Predicted)) +
     geom_point() + stat_smooth(method = 'lm')
 
 ggsave("predictedPlot.pdf", predictedPlot)
 
 
 predictedPlotYPwhorg <- ggplot(data = fishData[ grep("YP_WHORG", SppCut),],
-                               aes(x = HGppmLog, Predicted)) +
+                               aes(x = HGppbLog, Predicted)) +
     geom_point() + stat_smooth(method = 'lm')
 predictedPlotYPwhorg
 ggsave("predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
 
-
 ## Extract coef to mannual estimate lakes effects
 
 coefEst <- coef(modelOut)
-names(coefEst) <- gsub("fishData\\$sampleEvent", "", names(coefEst))
+names(coefEst) <- gsub("SampleEvent", "", names(coefEst))
 coefEstDT <- data.table(ce = coefEst, sampleEvent = names(coefEst))
 coefEstDT[ , LakeID :=  gsub("(\\d+)_(\\d+)", "\\1", sampleEvent)]
 coefEstDT[ , Year :=  gsub("(\\d+)_(\\d+)", "\\2", sampleEvent)]
 coefEstDT[ , Year := as.numeric(Year)]
 coefEstDT <- coefEstDT[ !is.na(Year),]
 
-lastYearDT <- coefEstDT[ , list(lastYear = max(Year)), by = LakeID]
-setkey(lastYearDT, "LakeID")
-setkey(coefEstDT, "LakeID")
-coefEstDT <- lastYearDT[coefEstDT]
+# lastYearDT <- coefEstDT[ , list(lastYear = max(Year)), by = LakeID]
+# setkey(lastYearDT, "LakeID")
+# setkey(coefEstDT, "LakeID")
+# coefEstDT <- lastYearDT[coefEstDT]
 
 
-loonBandsToUse <- loonBlood[ !LakeID %in% missingLoonLakes, Band]
-loonBlood[, length(Mass), by = list(Band, Year)][ V1 > 1,]
+# loonBandsToUse <- loonBlood[ !LakeID %in% missingLoonLakes, Band]
+# loonBlood[, length(Mass), by = list(Band, Year)][ V1 > 1,]
 
-for(band in loonBandsToUse) {
-    indexLakeID <-
-        loonBlood[ Band == band, fishLakeID][1]
-    indexLoonYear <-
-        loonBlood[ Band == band, Year][1]
-    ## Find year closest to observed year
-    useLoonYear <-       
-        coefEstDT[ LakeID == indexLakeID, Year][
-                       which( abs(coefEstDT[ LakeID == indexLakeID, Year] -
-                                      indexLoonYear) ==
-                                          min(abs(coefEstDT[ LakeID ==
-                                                                indexLakeID,
-                                                            Year] -
-                                                                indexLoonYear)))]
-    loonBlood[ Band == band, useYear := useLoonYear]
+# for(band in loonBandsToUse) {
+#     indexLakeID <-
+#         loonBlood[ Band == band, fishLakeID][1]
+#     indexLoonYear <-
+#         loonBlood[ Band == band, Year][1]
+#     ## Find year closest to observed year
+#     useLoonYear <-       
+#         coefEstDT[ LakeID == indexLakeID, Year][
+#                        which( abs(coefEstDT[ LakeID == indexLakeID, Year] -
+#                                       indexLoonYear) ==
+#                                           min(abs(coefEstDT[ LakeID ==
+#                                                                 indexLakeID,
+#                                                             Year] -
+#                                                                 indexLoonYear)))]
+#     loonBlood[ Band == band, useYear := useLoonYear]
+# }
+# Find nearest fish sample year (UseYear) to loon sample year for each lake
+loonBlood[, useYear := 0]
+for(lake in unique(loonBlood$Lake)) {
+  subLoon = subset(loonBlood, Lake == lake)
+  subFishData = subset(fishData, WATERWAY == lake)
+  if(nrow(subFishData) > 0) {
+    for(year in subLoon$Year) {
+      subLoonYear = subset(subLoon, Year == year)
+      closestYear = subFishData$YEAR[which(abs(subFishData$YEAR-year) == min(abs(subFishData$YEAR-year)))[1]]
+      #update loonblood UseYear with closest year
+      loonBlood[Lake == lake & Year == year, "useYear"] = closestYear
+    }
+  }
 }
 
 loonBlood[ !is.na(useYear),]
@@ -316,9 +325,9 @@ setnames(coefEstDT, "ce", "intercept")
 loonBlood <- copy(coefEstDT[loonBlood])
 
 
-## Used 15 cm (15 + 1 from log transform)
+## Used 6 in (6 + 1 from log transform)
 loonBlood[ , perchHG := intercept + coefEst[grep("SppCutYP_WHORG",
-                            names(coefEst))] * log(15 + 1)]
+                            names(coefEst))] * log(12 + 1)]
 loonBlood
 
 write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year, fishLakeID)],
