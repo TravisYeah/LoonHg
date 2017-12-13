@@ -11,8 +11,29 @@ loonBlood[ , fishLakeID := LakeID]
 loonBlood[ , fishLakeID := gsub( "^0", "", fishLakeID)]
 
 ## Load data and reformat it
-fishDataRaw <- fread("./inputData/fishUse.csv")
 fishData <- fread("./inputData/fishUse.csv")
+
+# Change lake names to lowercase
+loonBlood[, Lake := sapply(Lake, tolower)]
+fishData[, WATERWAY := sapply(WATERWAY, tolower)]
+
+#fix last few lake names
+loonBlood[ Lake == "monongalia - middle fork crow river", Lake := "monongalia"]
+loonBlood[ Lake == "mantrap (west arm)", Lake := "mantrap"]
+loonBlood[ Lake == "big birch (ne portion)", Lake := "big birch"]
+
+# Recreate ids by matching names
+lake_vals = sort(unique(loonBlood$Lake))
+for(i in 1:length(lake_vals)) {
+  fishData[WATERWAY == lake_vals[i], DOWID := i]
+  loonBlood[Lake == lake_vals[i], fishLakeID := i]
+}
+
+## remove loon data with no match fish data
+loonBloodLakeIDs <- loonBlood[ , unique(fishLakeID)]
+missingLoonLakes <- loonBloodLakeIDs[!loonBloodLakeIDs %in% fishData[ , unique(DOWID)]]
+missingLoonLakes
+loonBlood[ !LakeID %in% missingLoonLakes, unique(Lake)]
 
 ## Reformat data structure
 fishData[ , DOWID := as.character(DOWID)]
@@ -23,26 +44,27 @@ fishData[ , LgthcmLog := log(Lgthcm + 1)]
 fishData[ , SppCut := paste(Spec, Anat, sep = "_")]
 fishData[ , sampleEvent := paste(DOWID, YEAR, sep = "_")]
 
-# Edit lake codes
-## CHANGE Mantrap to match mantrap used with WQ
-fishData[ WATERWAY == "MANTRAP", DOWID := '29015104']
 
-## Change MONONGALIA to match Monogalia used with WQ
-fishData[ WATERWAY == "MONONGALIA", DOWID := '34015802']
-
-## Change BIG BIRCH to match BIG BIRCH used with WQ
-fishData[ WATERWAY == "BIG BIRCH", DOWID := '77008401']
-
-## Change VERMILION to match EAST VERMILION USED with WQ
-fishData[ WATERWAY == "VERMILION", DOWID := '69037801']
-
-## Pool all Tamarack data
-fishData[ grep("3024100|3024102|9006700", DOWID), DOWID := "3024101" ]
-loonBlood[ grep("3024100|3024102|9006700", fishLakeID), fishLakeID := "3024101"]
-
-## change east fox lake to be west fox lake
-loonBlood[ grep("East Fox", Lake), fishLakeID := "18029700"]
-fishData[ grep("EAST FOX", WATERWAY), fishLakeID := "18029700"]
+# # Edit lake codes
+# ## CHANGE Mantrap to match mantrap used with WQ
+# fishData[ WATERWAY == "MANTRAP", DOWID := '29015104']
+# 
+# ## Change MONONGALIA to match Monogalia used with WQ
+# fishData[ WATERWAY == "MONONGALIA", DOWID := '34015802']
+# 
+# ## Change BIG BIRCH to match BIG BIRCH used with WQ
+# fishData[ WATERWAY == "BIG BIRCH", DOWID := '77008401']
+# 
+# ## Change VERMILION to match EAST VERMILION USED with WQ
+# fishData[ WATERWAY == "VERMILION", DOWID := '69037801']
+# 
+# ## Pool all Tamarack data
+# fishData[ grep("3024100|3024102|9006700", DOWID), DOWID := "3024101" ]
+# loonBlood[ grep("3024100|3024102|9006700", fishLakeID), fishLakeID := "3024101"]
+# 
+# ## change east fox lake to be west fox lake
+# loonBlood[ grep("East Fox", Lake), fishLakeID := "18029700"]
+# fishData[ grep("EAST FOX", WATERWAY), fishLakeID := "18029700"]
 
 # Enter in non-detect codes
 ndCodes <- c("K", "KM", "ND")
@@ -54,21 +76,6 @@ fishData[ , NDyes := 0]
 fishData[ ND == "yes", NDyes := 1]
 fishData[ , NDno := 0]
 fishData[ ND == "no", NDno := 1]
-
-# Change lake names to lowercase
-loonBlood[, Lake := sapply(Lake, tolower)]
-fishData[, WATERWAY := sapply(WATERWAY, tolower)]
-
-#fix last few lake names
-loonBlood[ Lake == "monongalia - middle fork crow river", Lake := "monongalia"]
-loonBlood[ Lake == "mantrap (west arm)", Lake := "mantrap"]
-loonBlood[ Lake == "big birch (ne portion)", Lake := "big birch"]
-
-## merge data
-loonBloodLakeIDs <- loonBlood[ , unique(fishLakeID)]
-missingLoonLakes <- loonBloodLakeIDs[!loonBloodLakeIDs %in% fishData[ , unique(DOWID)]]
-missingLoonLakes
-loonBlood[ !LakeID %in% missingLoonLakes, unique(Lake)]
 
 ## Remove data that has too small of number
 ## Total of 7 fish
@@ -127,28 +134,18 @@ fishData[ , length(HGppm), by = sampleEvent][ order(V1, decreasing = FALSE),][ V
 fishData[ , Censor := FALSE]
 fishData[ NDyes == 1, Censor := TRUE]
 
-
-# Add back in missing data
-missE <- as.numeric(c("03024101", "29015104", "34015802", "69037801", "77008401"))
-fishDataRaw[ , unique(DOWID)]
-fishDataRaw[   missE %in% DOWID,]
-str(fishDataRaw)
-missingEvents
-
-
-fishData
 # Run model
 HGppbLog = log(fishData$HGppm*1000 + 1)
 Censor = fishData$Censor
 LengthInchesLog = fishData$LgthinLog
 SppCut = fishData$SppCut
 SampleEvent = fishData$sampleEvent
-# st <- system.time(
-#     modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
-# )
-# print(st)
-# save(modelOut, file = "fishHGmodel.rda")
-load("fishHGmodel.rda")
+st <- system.time(
+    modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
+)
+print(st)
+save(modelOut, file = "fishHGmodel.rda")
+# load("fishHGmodel.rda")
 # summary(modelOut)
 
 # Get model residuals
@@ -330,7 +327,7 @@ loonBlood[ , perchHG := intercept + coefEst[grep("SppCutYP_WHORG",
                             names(coefEst))] * log(12 + 1)]
 loonBlood
 
-write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year, fishLakeID)],
+write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year)],
           file = "perchLoonHGData.csv", row.names = FALSE)
 
 ## ## loonBlood2[ , unique(Lake)]

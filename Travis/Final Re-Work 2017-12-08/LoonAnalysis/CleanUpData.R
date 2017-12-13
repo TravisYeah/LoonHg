@@ -338,19 +338,19 @@ setkey(perchHG, "lakeYearID")
 
 perchHG2 <- copy(perchHG[ , list(perchHG = mean(perchHG)), by = lakeYearID])
 
-perchHG2[ lakeYearID == '2009100_2012', lakeYearID := '02009100_2012']
-perchHG2[ lakeYearID == '2009100_2014', lakeYearID := '02009100_2014']
+# perchHG2[ lakeYearID == '2009100_2012', lakeYearID := '02009100_2012']
+# perchHG2[ lakeYearID == '2009100_2014', lakeYearID := '02009100_2014']
 
 setkey(perchHG2, "lakeYearID")
 
 dtFour <- perchHG2[dtThree]
 
-## Use West Fox's data for east Fox HG
-dtFour[ lakeYearID == "18029800_2011", perchHG :=
-           dtFour[ lakeYearID == "18029700_2012", unique(perchHG)]]
-
-## 
-dtFour[ grepl('MUD_MONOGALIA', LOC_DESC), perchHG := dtFour[ grepl('MONOGALIA_MIDDLE_FORK_CROW_RIVER', LOC_DESC), unique(perchHG)]]
+# ## Use West Fox's data for east Fox HG
+# dtFour[ lakeYearID == "9_2011", perchHG :=
+#            dtFour[ lakeYearID == "18029700_2012", unique(perchHG)]]
+# 
+# ## 
+# dtFour[ grepl('MUD_MONOGALIA', LOC_DESC), perchHG := dtFour[ grepl('MONOGALIA_MIDDLE_FORK_CROW_RIVER', LOC_DESC), unique(perchHG)]]
 
 dtFour[ is.na(perchHG), ]
 
