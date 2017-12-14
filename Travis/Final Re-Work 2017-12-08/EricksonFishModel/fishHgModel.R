@@ -258,7 +258,7 @@ predictedPlotYPwhorg
 ggsave("predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
 
 ## Extract coef to mannual estimate lakes effects
-
+modelOut@survreg$y
 coefEst <- coef(modelOut)
 names(coefEst) <- gsub("SampleEvent", "", names(coefEst))
 coefEstDT <- data.table(ce = coefEst, sampleEvent = names(coefEst))
@@ -293,6 +293,10 @@ coefEstDT <- coefEstDT[ !is.na(Year),]
 #     loonBlood[ Band == band, useYear := useLoonYear]
 # }
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
+
+# Count fish samples per matching loon lake id
+# coefEstDT[, .(count=.N), by=LakeID][as.numeric(LakeID) < 500][order(as.numeric(LakeID))]
+
 loonBlood[, useYear := 0]
 for(lake in unique(loonBlood$Lake)) {
   subLoon = subset(loonBlood, Lake == lake)
@@ -316,16 +320,16 @@ loonBlood[ , fishSampleEvent := paste( fishLakeID, useYear, sep = "_")]
 setkey(loonBlood, "fishSampleEvent")
 setkey(coefEstDT, "sampleEvent")
 
-coefEstDT[ , c('LakeID', 'lastYear', 'Year') := NULL]
-setnames(coefEstDT, "ce", "intercept")
+coefEstDT[ , c('LakeID', 'Year') := NULL]
+setnames(coefEstDT, "ce", "sampleEvent")
 
 loonBlood <- copy(coefEstDT[loonBlood])
 
+## 
+loonBlood[ , perchHG := intercept + ce * log(4.72 + 1)]
 
-## Used 6 in (6 + 1 from log transform)
-loonBlood[ , perchHG := intercept + coefEst[grep("SppCutYP_WHORG",
-                            names(coefEst))] * log(12 + 1)]
-loonBlood
+# lakeid same as fishlakeid
+loonBlood[, LakeID := fishLakeID]
 
 write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year)],
           file = "perchLoonHGData.csv", row.names = FALSE)

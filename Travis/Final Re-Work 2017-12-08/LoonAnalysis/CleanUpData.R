@@ -317,26 +317,27 @@ write.csv(x = dtWide, file = "LoonHGblood.csv")
 
 
 
-
-
-
-
+#changes made in fishHdModel.R
+dtThree[, Lake := sapply(Lake, tolower)]
+dtThree[ Lake == "monongalia - middle fork crow river", Lake := "monongalia"]
+dtThree[ Lake == "mantrap (west arm)", Lake := "mantrap"]
+dtThree[ Lake == "big birch (ne portion)", Lake := "big birch"]
 
 ## Now, merge in Hg model 
 getwd()
 list.files("../EricksonFishModel")
 perchHG <- fread("../EricksonFishModel/perchLoonHGData.csv")
-perchHG[ Lake == "Loon", LakeID := '111111111']
-perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
+# perchHG[ Lake == "Loon", LakeID := '111111111']
+# perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
 
-perchHG[ , lakeYearID := paste(LakeID, Year, sep = "_")]
-dtThree[ , lakeYearID := paste(LakeID, Year, sep = "_")]
+perchHG[ , lakeYearID := paste(Lake, Year, sep = "_")]
+dtThree[ , lakeYearID := paste(Lake, Year, sep = "_")]
 
 ## Merge together data
 setkey(dtThree, "lakeYearID")
 setkey(perchHG, "lakeYearID")
 
-perchHG2 <- copy(perchHG[ , list(perchHG = mean(perchHG)), by = lakeYearID])
+perchHG2 <- copy(perchHG[ , list(perchHG = mean(perchHG, na.rm=T)), by = lakeYearID])
 
 # perchHG2[ lakeYearID == '2009100_2012', lakeYearID := '02009100_2012']
 # perchHG2[ lakeYearID == '2009100_2014', lakeYearID := '02009100_2014']
