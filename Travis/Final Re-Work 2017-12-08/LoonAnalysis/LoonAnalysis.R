@@ -1,3 +1,4 @@
+.libPaths('D:/library/R')
 ## Load libraries 
 library(data.table)
 library(psych)
@@ -18,7 +19,7 @@ dHg <- d[ , list(perchHG, lakeYearID, Year, Lake, SECCHI, PH,
                  Phosp, ALK, CHLA, AREA, MAXdepth, TSI, Age, Sex,
                  Mercury, Mass, Selenium, Date)]
 dHg[ , Mass := as.numeric(Mass)]
-dHg[ , HgLog := log(Mercury)]
+dHg[ , HgLog := log(Mercury*1000)]
 dHg
 dHg[ , Date := as.POSIXct(strptime(Date, format = "%Y-%m-%d"))]
 dHg[ , Date]
@@ -27,6 +28,8 @@ dHg[ , Day := day(Date)]
 
 dHG2 <- copy(dHg)
 
+
+
 ## Exculde unkown sex adult
 dHG2[ , which(Age == "Adult" & Sex == "Unknown")]
 dHG2 <- copy(dHG2[ - dHG2[ , which(Age == "Adult" & Sex == "Unknown")],])
@@ -34,14 +37,15 @@ dHG2 <- copy(dHG2[ - dHG2[ , which(Age == "Adult" & Sex == "Unknown")],])
 dHG2[ , Sex := factor(Sex)]
 levels(dHG2$Sex)[3] <- "Juvenile"
 dHG2[ , Sex := factor(Sex)]
+dHG2[, HgLog := log(HgLog*1000)]
 
 ### code for marginal plots   
 perchBySex <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
         facet_grid( . ~ Sex) +
             theme_bw() +
-                ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
-                    xlab(expression("ln(Standardized perch Hg(" * mu*"g/g wet weight) + 1)")) +
+                ylab(expression("ln(Loon blood Hg(" * mu*"g/kg wet weight))")) +
+                    xlab(expression("ln(Standardized perch Hg(" * mu*"g/kg wet weight) + 1)")) +
                         theme(strip.background = element_blank())
 perchBySex
 ggsave("perchBySex.pdf", perchBySex, width = 8, height = 4)
@@ -49,17 +53,30 @@ ggsave("perchBySex.pdf", perchBySex, width = 8, height = 4)
 onlyHG <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
             theme_bw() +
-                ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
-                    xlab(expression("ln(Standardized perch Hg (" * mu*"g/g wet weight) + 1)")) +
+                ylab(expression("ln(Loon blood Hg(" * mu*"g/kg wet weight))")) +
+                    xlab(expression("ln(Standardized perch Hg (" * mu*"g/kg wet weight) + 1)")) +
                         theme(strip.background = element_blank())
 onlyHG
 ggsave("onlyHG.pdf", onlyHG, width = 6, height = 4)
+
+exp_one_trans = function() trans_new("exp_one", function(x) exp(x) - 1, function(x) exp(x) - 1)
+exp_trans = function() trans_new("exp", function(x) exp(x), function(x) exp(x))
+onlyHGBT <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
+  geom_point() + 
+  stat_smooth(method = "lm", formula = y ~ x) +
+  coord_trans(x="exp_one", y="exp") +
+  theme_bw() +
+  ylab(expression("Loon blood Hg(" * mu*"g/kg wet weight)")) +
+  xlab(expression("Standardized perch Hg (" * mu*"g/kg wet weight)")) +
+  theme(strip.background = element_blank())
+onlyHGBT
+ggsave("onlyHGBT.pdf", onlyHGBT, width = 6, height = 4)
 
 hgMass <- ggplot(data = dHG2, aes(x = Mass, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
         facet_grid( . ~ Age) +
             theme_bw() +
-                ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
+                ylab(expression("ln(Loon blood Hg(" * mu*"g/kg wet weight))")) +
                     xlab(expression("Mass (kg)")) +
                         theme(strip.background = element_blank())
 hgMass
@@ -67,7 +84,7 @@ ggsave("hgMass.pdf", hgMass, width = 8, height = 4)
 
 
 sexPlot <- ggplot(data = dHG2, aes(x = Sex, y = HgLog)) +
-    ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
+    ylab(expression("ln(Loon blood Hg(" * mu*"g/kg wet weight))")) +
         xlab("Loon sex/age category") + 
     geom_boxplot() + theme_bw()
 sexPlot
@@ -77,6 +94,63 @@ ggsave("sexPlot.pdf", sexPlot, width = 6, height = 4)
 ggplot(data = dHG2, aes(x = Month, y = HgLog, color = Sex)) +
     geom_point() +
         scale_color_manual(values = c('blue', 'red', 'black'))
+
+################### CREATE LAT/LONG MAP HERE #########################
+
+library(measurements)
+library(ggmap)
+#read in coords
+coords=fread("D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/coords/coordinates.csv")
+coords
+
+#convert deg to dec
+# substring("test", 3,4)
+# substring("test", 3)
+# paste(substring("test", 1, 2), " ", substring("test", 3), sep="")
+# 466877 932009
+# conv_unit(paste(substring("466877", 1, 2), " ", substring("466877", 3, 4), " ", substring("466877",5), sep=""), from = 'deg_min_sec', to = 'dec_deg')
+coords[Lat != "", latDeg := paste(substring(Lat, 1, 2), ".", substring(Lat, 3), sep="")]
+coords[Long != "", longDeg := paste(substring(Long, 1, 2), ".", substring(Long, 3), sep="")]
+coords[, WATERWAY := sapply(WATERWAY,tolower)]
+coordsUnique <- unique(coords[, c("WATERWAY", "latDeg", "longDeg")])
+coordsUnique <- copy(coordsUnique[!is.na(latDeg) & !is.na(longDeg)])
+coordsUnique[, cnt := seq_len(.N), by="WATERWAY"]
+coordsUnique <- copy(coordsUnique[cnt == 1,])
+coordsUnique[, "cnt" := NULL]
+coordsUnique
+setkey(coordsUnique, "WATERWAY")
+setkey(dHG2, "Lake")
+coordsUnique[grep('baby', WATERWAY)]
+
+coordSummary <- coordsUnique[dHG2]
+coordResult <- dHG2[]
+
+#convert utm to dec
+
+# get mn map
+minnesota <- get_map("minnesota", zoom = 7)
+
+
+# add data to map and plot it
+ggmap(minnesota)
+minnesotaMap <- ggmap(minnesota,
+  extent = "device", legend = "topleft")
+  minnesotaMap +
+  stat_density2d(
+    aes(
+      x = lon, y = lat, 
+      fill = ..level..,
+      alpha = ..level..
+    ),
+    size = 2, 
+    bins = 4, 
+    data = violent_crimes,
+    geom = "polygon"
+  )
+
+
+
+######################################################################
 
 write.csv(file = "LoonDataFinalUsed.csv", x = dHG2, row.names = FALSE)
 

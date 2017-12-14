@@ -140,13 +140,15 @@ Censor = fishData$Censor
 LengthInchesLog = fishData$LgthinLog
 SppCut = fishData$SppCut
 SampleEvent = fishData$sampleEvent
-st <- system.time(
-    modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
-)
-print(st)
-save(modelOut, file = "fishHGmodel.rda")
-# load("fishHGmodel.rda")
+# st <- system.time(
+#     modelOut <- cenreg( Cen(HGppbLog, Censor) ~ LengthInchesLog : SppCut + SampleEvent - 1, dist = 'gaussian')
+# )
+# print(st)
+# save(modelOut, file = "fishHGmodel.rda")
+load("fishHGmodel.rda")
 # summary(modelOut)
+
+
 
 # Get model residuals
 fishData[ , resids := NULL]
@@ -233,6 +235,7 @@ lgthSampleEvent
 ggsave('lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
 
 fishData[, Predicted := modelOut@survreg$linear.predictors]
+fishData[, PredictedBT := exp(modelOut@survreg$linear.predictors)-1]
 
 lgthSampleEvent2 <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
                           aes(x = LgthinLog,
@@ -245,11 +248,19 @@ lgthSampleEvent2 <- ggplot(fishData[ SppSampleEvent %in% sampleEventPlot, ],
 lgthSampleEvent2
 ggsave('lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
 
+# PREDICTED PLOT
 predictedPlot <- ggplot(data = fishData, aes(x = HGppbLog, Predicted)) +
-    geom_point() + stat_smooth(method = 'lm')
-
+    geom_point() + stat_smooth(method = 'lm') + coord_trans(y="exp")
+predictedPlot
 ggsave("predictedPlot.pdf", predictedPlot)
 
+# PREDICTED PLOT BT
+library(scales)
+exp_one_trans = function() trans_new("exp_one", function(x) exp(x) - 1, function(x) exp(x) - 1)
+predictedPlotBT <- ggplot(data = fishData, aes(x = HGppbLog, Predicted)) +
+  geom_point() + stat_smooth(method = 'lm') + coord_trans(y="exp_one")
+predictedPlotBT
+ggsave("predictedPlotBT.pdf", predictedPlotBT)
 
 predictedPlotYPwhorg <- ggplot(data = fishData[ grep("YP_WHORG", SppCut),],
                                aes(x = HGppbLog, Predicted)) +
@@ -266,6 +277,9 @@ coefEstDT[ , LakeID :=  gsub("(\\d+)_(\\d+)", "\\1", sampleEvent)]
 coefEstDT[ , Year :=  gsub("(\\d+)_(\\d+)", "\\2", sampleEvent)]
 coefEstDT[ , Year := as.numeric(Year)]
 coefEstDT <- coefEstDT[ !is.na(Year),]
+
+residuals(modelOut)
+summary(modelOut)
 
 # lastYearDT <- coefEstDT[ , list(lastYear = max(Year)), by = LakeID]
 # setkey(lastYearDT, "LakeID")
