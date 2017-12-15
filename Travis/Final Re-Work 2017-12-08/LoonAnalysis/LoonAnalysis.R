@@ -101,54 +101,107 @@ library(measurements)
 library(ggmap)
 #read in coords
 coords=fread("D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/coords/coordinates.csv")
-coords
+coordsConv=fread("D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/coords/coordinatesConv.csv")
+coords[grep("adley", WATERWAY)]
+# Convert to correct decimal format
+coords[Lat != "", latitude := as.numeric(paste(substring(Lat, 1, 2), ".", substring(Lat, 3), sep=""))]
+coords[Long != "", longitude := as.numeric(paste("-",substring(Long, 1, 2), ".", substring(Long, 3), sep=""))]
+setorder(coords, WATERWAY)
+setorder(coordsConv, WATERWAY)
 
-#convert deg to dec
-# substring("test", 3,4)
-# substring("test", 3)
-# paste(substring("test", 1, 2), " ", substring("test", 3), sep="")
-# 466877 932009
-# conv_unit(paste(substring("466877", 1, 2), " ", substring("466877", 3, 4), " ", substring("466877",5), sep=""), from = 'deg_min_sec', to = 'dec_deg')
-coords[Lat != "", latDeg := paste(substring(Lat, 1, 2), ".", substring(Lat, 3), sep="")]
-coords[Long != "", longDeg := paste(substring(Long, 1, 2), ".", substring(Long, 3), sep="")]
+# Convert from UTM to decimal
+coords[, latitude := NA]
+coords[, longitude := NA]
+for(i in 1:nrow(coords)) {
+  coords$latitude[i] = ifelse(is.na(coords$Long[i]), coordsConv$X_Utm[i], coords$latitude[i])
+  coords$longitude[i] = ifelse(is.na(coords$Lat[i]), coordsConv$Y_Utm[i], coords$longitude[i])
+}
+#
+coords[ grep("tamarac", WATERWAY, ignore.case=T) , WATERWAY:= "TAMARACK"]
+coords[ grep("LITTLE VERMILION", WATERWAY, ignore.case=F), WATERWAY:= "EAST VERMILION"]
+coords[ grep("EAGLES NEST #3", WATERWAY, ignore.case=F), WATERWAY:= "EAGLES NEST"]
+coords[ grep("AUTO", WATERWAY, ignore.case=F) , WATERWAY:= "Arrowhead [Auto]"]
 coords[, WATERWAY := sapply(WATERWAY,tolower)]
-coordsUnique <- unique(coords[, c("WATERWAY", "latDeg", "longDeg")])
-coordsUnique <- copy(coordsUnique[!is.na(latDeg) & !is.na(longDeg)])
+coordsUnique <- unique(coords[, c("WATERWAY", "longitude", "latitude")])
+coordsUnique <- copy(coordsUnique[!is.na(latitude) & !is.na(longitude)])
 coordsUnique[, cnt := seq_len(.N), by="WATERWAY"]
 coordsUnique <- copy(coordsUnique[cnt == 1,])
 coordsUnique[, "cnt" := NULL]
 coordsUnique
+coords
+
 setkey(coordsUnique, "WATERWAY")
 setkey(dHG2, "Lake")
-coordsUnique[grep('baby', WATERWAY)]
+dHG2[, latitude := NA]
+dHG2[, longitude := NA]
+dHG2$Lake[1]
 
-coordSummary <- coordsUnique[dHG2]
-coordResult <- dHG2[]
+for(i in 1:nrow(dHG2)) {
+  sub=coordsUnique[WATERWAY == dHG2$Lake[i]]$latitude
+  if(length(sub) > 0) {
+    dHG2$latitude[i] = sub
+  } else {
+    dHG2$latitude[i] = NA
+  }
+  
+}
 
-#convert utm to dec
+coordResult <- coordSummary[!is.na(latitude) & !is.na(longitude)]
+sort(unique(coordSummary$WATERWAY))[which(!(sort(unique(coordSummary$WATERWAY)) %in% unique(coordResult$WATERWAY)))]
+coords[grep("auto", WATERWAY)]
 
 # get mn map
+minnesota <- get_map("minnesota", zoom = 6)
+
+test = data.frame(hg = coordResult$perchHG, lat = coordResult$latitude, lon=coordResult$longitude)
+
+# exp the hg
+test$hg = exp(test$hg) - 1
+
+# heat map with zoom 7 (loon hg)
+heat_z7 = ggmap(minnesota) + stat_density2d(data=test, aes(x=lon, y=lat, fill=..level.., alpha=..level..),
+                              geom="polygon", size=1, bins=8) +
+  scale_fill_continuous(low="blue", high="black", limits=c(min(test$hg), max(test$hg))) +
+  # scale_fill_gradient(low="red", high="green")
+  scale_alpha(range = c(0,0.6), guide=FALSE)
+png(filename="heat_z7.png", width=1280, height=1280)
+print(heat_z7)
+dev.off()
+
+# heat map with zoom 6 (loon hg)
+minnesota <- get_map("minnesota", zoom = 6)
+heat_z6 = ggmap(minnesota) + stat_density2d(data=test, aes(x=lon, y=lat, fill=..level.., alpha=..level..),
+                                            geom="polygon", size=1, bins=8) +
+  scale_fill_continuous(low="blue", high="black", limits=c(min(test$hg), max(test$hg))) +
+  # scale_fill_gradient(low="red", high="green")
+  # scale_alpha(range = c(0,0.6), guide=FALSE)
+png(filename="heat_z6.png", width=1280, height=1280)
+print(heat_z6)
+dev.off()
+
+# plain plot of points
 minnesota <- get_map("minnesota", zoom = 7)
+point_map_plain = ggmap(minnesota) +
+  geom_point(data=test, aes(x=lon, y=lat))
+  # + stat_density2d(data=test, aes(x=lon, y=lat, fill=..level.., alpha=..level..),
+                                            # geom="polygon", size=1, bins=8) +
+  # scale_fill_continuous(low="blue", high="black", limits=c(min(test$hg), max(test$hg))) +
+  # scale_fill_gradient(low="red", high="green")
+  # scale_alpha(range = c(0,0.6), guide=FALSE)
+png(filename="point_map_plain.png", width=1280, height=1280)
+print(point_map_plain)
+dev.off()
 
-
-# add data to map and plot it
-ggmap(minnesota)
-minnesotaMap <- ggmap(minnesota,
-  extent = "device", legend = "topleft")
-  minnesotaMap +
-  stat_density2d(
-    aes(
-      x = lon, y = lat, 
-      fill = ..level..,
-      alpha = ..level..
-    ),
-    size = 2, 
-    bins = 4, 
-    data = violent_crimes,
-    geom = "polygon"
-  )
-
-
+# plotting hg of fish (not loons)
+test = data.frame(hg = exp(coordResult$HgLog), lat = coordResult$latitude, lon=coordResult$longitude)
+heamap_fish = ggmap(minnesota) + stat_density2d(data=test, aes(x=lon, y=lat, fill=..level.., alpha=..level..),
+                                            geom="polygon", size=1, bins=8) +
+  scale_fill_continuous(low="blue", high="black", limits=c(min(test$hg), max(test$hg))) +
+  # scale_fill_gradient(low="red", high="green")
+  scale_alpha(range = c(0,0.7), guide=FALSE)
+png(filename="heamap_fish.png", width=1280, height=1280)
+print(heamap_fish)
+dev.off()
 
 ######################################################################
 

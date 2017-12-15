@@ -30,7 +30,7 @@ fishKey[ AFS == STORET, AFS := ""]
 fishKey[ AFS == STORET, ]
 
 fishDataUse2[ , Spec := factor(Spec)]
-fishInAFS <- fishDataUse2[ Spec %in% fishKey[, AFS], unique(Spec)] 
+fishInAFS <- fishDataUse2[ Spec %in% fishKey[, AFS], unique(Spec)]
 fishInAFS
 
 
