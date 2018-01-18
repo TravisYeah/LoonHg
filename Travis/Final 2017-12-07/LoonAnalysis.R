@@ -1,3 +1,5 @@
+.libPaths("D:/library/R")
+
 ## Load libraries 
 library(data.table)
 library(psych)
