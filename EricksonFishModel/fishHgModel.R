@@ -382,8 +382,8 @@ loonBlood[ , perchHG := intercept + coefEst[grep("SppCutYP_WHORG",
                                                  names(coefEst))] * log(15 + 1)]
 loonBlood
 
-## write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year, fishLakeID)],
-##           file = "perchLoonHGData.csv", row.names = FALSE)
+write.csv(x = loonBlood[ , list(LakeID, Lake, perchHG, useYear, Year, fishLakeID)],
+          file = "perchLoonHGData.csv", row.names = FALSE)
 
 ## ## loonBlood2[ , unique(Lake)]
 

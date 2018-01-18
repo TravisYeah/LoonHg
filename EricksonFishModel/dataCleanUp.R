@@ -1,8 +1,7 @@
 library(data.table)
 library(tibble)
+setwd("D:/Projects/USGS_R/loons/Final/EricksonFishModel")
 #install.packages('tibble', dependencies = T)
-
-setwd('D:/Projects/USGS_R/loons/EricksonFishModel')
 
 ## Load data, grab columns we need
 fishData <- fread("./inputData/ALLFISH2015-HgPCBPFOS_MN.csv")

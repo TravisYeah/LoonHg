@@ -18,6 +18,7 @@ d <- fread("./FinalData/LoonData.csv")
 dHg <- d[ , list(perchHG, lakeYearID, Year, Lake, SECCHI, PH,
                  Phosp, ALK, CHLA, AREA, MAXdepth, TSI, Age, Sex,
                  Mercury, Mass, Selenium, Date)]
+dHg = d
 dHg[ , Mass := as.numeric(Mass)]
 dHg[ , HgLog := log(Mercury)]
 dHg
@@ -82,6 +83,7 @@ write.csv(file = "./FinalData/LoonDataFinalUsed.csv", x = dHG2, row.names = FALS
 
 ## Analysis
 
+dHG2$HgLog
 out <- lm(HgLog ~ perchHG + Sex + Mass:Age, data = dHG2)
 summary(out)
 confint(out, level = 0.95)

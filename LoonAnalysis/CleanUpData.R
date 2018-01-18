@@ -64,6 +64,8 @@ dtUse[ grep("Rabbit", Lake), Lake := gsub("(East|West) (Rabbit)", "\\2 (\\1 Port
 dtUse[ Lake == "South Tamarack", Lake := "South Tamarac"]
 dtUse[ grep("Wild Rice", Lake), Lake := "Wild Rice"]
 dtUse[ grep("South Turtle", Lake), Lake := "South Turtle"]
+dtUse[ grep("tamarac", Lake, ignore.case=T) , Lake := "Tamarack"]
+dtUse[ grep("onongalia", Lake, ignore.case=T) , Lake := "Monongalia"]
 
   
 ## Need to remove Marsh

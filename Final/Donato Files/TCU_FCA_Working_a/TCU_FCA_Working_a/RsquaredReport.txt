@@ -1,0 +1,2 @@
+The coefficient of determination is:  0.693109
+

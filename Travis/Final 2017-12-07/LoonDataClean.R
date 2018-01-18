@@ -21,9 +21,9 @@ dtUse[ , Band :=
                       "\\1",
                       SAMPLENAME, perl = TRUE)]
 ## Fix data mistake
-dtUse[ Band == "1038-994250", Band := "1038-94250"] 
+dtUse[ Band == "1038-994250", Band := "1038-94250"]
 
-dtUse[ , temp := 
+dtUse[ , temp :=
       gsub("(\\d{2,4}-\\d{2,6}|No Band)(_| _)(\\d{4}) (\\(.*)",
            "\\4",
            SAMPLENAME, perl = TRUE)]
@@ -110,12 +110,12 @@ dtUse[ grep("Crow River", Lake), LakeID := '34015802']
 ## Merge in Band info
 list.files("./RawData/")
 band <- fread("./RawData/LoonBands_revised 26jul17.csv")
-## Remove loon entires Kevin marked to remove 
+## Remove loon entires Kevin marked to remove
 band <- copy(band[ Remove == 0,])
 setnames(band, "Body (mm)", "BodyLength")
 bandUse <- band[ , list(Age, Sex, Date, Band, Mass)]
 
-## Change date 
+## Change date
 bandUse[ , Date := as.POSIXct(strptime(Date, "%d-%b-%y"))]
 
 setkey(dtUse, "Band")
@@ -145,7 +145,7 @@ dtBoth[ Result == "ND" & ANALYTE == "Selenium", Result := 0.2]
 dtBoth[ Result == "ND" & ANALYTE == "Aluminum", Result := 0.93]
 dtBoth[ Result == "ND" & ANALYTE == "Cadmium", Result  := 0.005]
 dtBoth[ Result == "ND" & ANALYTE == "Lead",     Result  := 0.01]
-dtBoth[ Result == "ND" & ANALYTE == "Solids", Result := 0.2 ] 
+dtBoth[ Result == "ND" & ANALYTE == "Solids", Result := 0.2 ]
 
 dtBoth[ , Result := as.numeric(Result)]
 
@@ -192,18 +192,18 @@ dWQ[ , P_3654 := as.numeric(gsub("< ", "", P_3654))]
 dWQ[ , Phosp := apply(dWQ[ , grep( "P_", colnames(dWQ)), with = FALSE],
                1, median, na.rm = TRUE)]
 
-## Remove CHLA and take median of other measure types 
+## Remove CHLA and take median of other measure types
 dWQ[ , c( "CHLA_10200H_UNCORR", "CHLA_ASTMD373187_UNCORR") := NULL]
 dWQ[ , CHLA := apply(dWQ[ , grep( "CHLA", colnames(dWQ)), with = FALSE],
                1, median, na.rm = TRUE)]
-dWQ2 <- copy(dWQ[ , list(LOC_ID, LOC_DESC, SAMPLE_DATE, 
+dWQ2 <- copy(dWQ[ , list(LOC_ID, LOC_DESC, SAMPLE_DATE,
                           SECCHI, PH, Phosp, ALK, CHLA, LAKE_AREA, MAX_DEPTH,
                          TSI)])
 ## Clean up secchi
 dWQ2[ , SECCHI := as.numeric(gsub("> ", "", SECCHI))]
 
 dWQ2 <- copy(dWQ2[ , list(SECCHI = median(SECCHI, na.rm = TRUE), Phosp = median(Phosp, na.rm = TRUE),
-			PH = median(PH, na.rm = TRUE), ALK = median(ALK, na.rm = TRUE), 
+			PH = median(PH, na.rm = TRUE), ALK = median(ALK, na.rm = TRUE),
 			CHLA = median(CHLA, na.rm = TRUE), LAKE_AREA =median(LAKE_AREA, na.rm = TRUE),
 			MAX_DEPTH = median(MAX_DEPTH, na.rm = TRUE), TSI = median(TSI, na.rm = TRUE)), by = list(LOC_ID, LOC_DESC, SAMPLE_DATE)])
 
@@ -291,7 +291,7 @@ dWQ5[ grep("^3019700", LakeID), ]
 dWQ5[ grep("^3019700", LakeID), LakeID := paste0("0", LakeID)]
 
 
-## Mke sure turtle is the same across 
+## Mke sure turtle is the same across
 dWQ[ grep("TURT", LOC_DESC), max(MAX_DEPTH, na.rm = TRUE)]
 dWQ2[ grep("TURT", LOC_DESC), max(MAX_DEPTH, na.rm = TRUE)]
 dWQ3[ grep("TURT", LOC_DESC), max(MAX_DEPTH, na.rm = TRUE)]
@@ -304,15 +304,16 @@ dWQ3[ , Month:= month(Date)]
 
 
 
-write.csv(x = dWQ5, file = "WaterQualityCheck27July17.csv", row.names = FALSE)
+# write.csv(x = dWQ5, file = "WaterQualityCheck27July17.csv", row.names = FALSE)
 
 setkey(dtWide, 'LakeID')
 setkey(dWQ5, 'LakeID')
 
 ## Merge data together
 dtThree <- copy(dWQ5[dtWide])
+dtThree[Lake == "Tamarack", LakeID := "000001"]
 
-write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
+# write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
 
 
 ###################
@@ -321,12 +322,17 @@ write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
 ###################
 ###################
 
-## Now, merge in Hg model 
+##################test
+
+##################
+
+
+## Now, merge in Hg model
 getwd()
 list.files("./UseYear")
 perchHG <- fread("./UseYear/perchLoonHGData.csv")
-perchHG[ Lake == "Loon", LakeID := '111111111']
-perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
+# perchHG[ Lake == "Loon", LakeID := '111111111']
+# perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
 
 perchHG[ , lakeYearID := paste(LakeID, Year, sep = "_")]
 dtThree[ , lakeYearID := paste(LakeID, Year, sep = "_")]
@@ -337,19 +343,19 @@ setkey(perchHG, "lakeYearID")
 
 perchHG2 <- copy(perchHG[ , list(perchHG = mean(perchHG)), by = lakeYearID])
 
-perchHG2[ lakeYearID == '2009100_2012', lakeYearID := '02009100_2012']
-perchHG2[ lakeYearID == '2009100_2014', lakeYearID := '02009100_2014']
+# perchHG2[ lakeYearID == '2009100_2012', lakeYearID := '02009100_2012']
+# perchHG2[ lakeYearID == '2009100_2014', lakeYearID := '02009100_2014']
 
 setkey(perchHG2, "lakeYearID")
 
 dtFour <- perchHG2[dtThree]
 
 ## Use West Fox's data for east Fox HG
-dtFour[ lakeYearID == "18029800_2011", perchHG :=
-           dtFour[ lakeYearID == "18029700_2012", unique(perchHG)]]
+# dtFour[ lakeYearID == "18029800_2011", perchHG :=
+#            dtFour[ lakeYearID == "18029700_2012", unique(perchHG)]]
 
-## 
-dtFour[ grepl('MUD_MONOGALIA', LOC_DESC), perchHG := dtFour[ grepl('MONOGALIA_MIDDLE_FORK_CROW_RIVER', LOC_DESC), unique(perchHG)]]
+##
+# dtFour[ grepl('MUD_MONOGALIA', LOC_DESC), perchHG := dtFour[ grepl('MONOGALIA_MIDDLE_FORK_CROW_RIVER', LOC_DESC), unique(perchHG)]]
 
 dtFour[ is.na(perchHG), ]
 

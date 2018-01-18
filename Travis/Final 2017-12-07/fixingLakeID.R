@@ -228,6 +228,7 @@ unique(results[ grep("wild|rice", results$Lake, ignore.case=T) ]$Lake)
 unique(results$Lake)
 
 results <- data.table(results)
+results=cbind(results, HGppbLog = log(results$HGppm*1000 + 1))
 
 # converting ppm to ppb
 # results[, HGppbLog := log(HGppm*1000 + 1)]
@@ -252,16 +253,34 @@ save(modelOut, file = "fishHGmodelTravisFinal.rda")
 # load("fishHGmodelTravisFinal.rda")
 
 # Join results with the data
-results=cbind(results, Predicted=modelOut@survreg$linear.predictors)
+results=cbind(results, perchHG=modelOut@survreg$linear.predictors)
 head(results)
 
 # Add residuals column
 results = cbind(results, resids = residuals(modelOut))
 
+# Remove loonblood year column
+results = results[,FISHYEAR := YEAR]
+results = results[, -c("YEAR")]
+results = results[,-c("V1")]
+
+# Check columns matching lake names
+data.frame(sqldf("SELECT LakeID, WATERWAY, LakeFixed FROM results GROUP BY LakeID, WATERWAY, LakeFixed"))
+
+# Corrections
+results[LakeID == "18009302", LakeID := "18009301"]
+results[LakeID == "34015802", WATERWAY := 'Monongalia - Middle Fork Crow River']
+results[LakeID == "34015802", LakeFixed := 'Monongalia - Middle Fork Crow River']
+results[WATERWAY == "TAMARACK", LakeID := "000001"]
+
+# Use Year
+results[LakeID == "000001", c("FISHYEAR", "Year", "UseYear")]
+
 # Write perch & loon joined data/results for loon analysis
-results=data.frame(results)
-write.csv(x = results[ , with(results,list(LakeID, Lake, perchHG, useYear, Year, fishLakeID))],
-          file = "./UseYear/perchLoonHGData.csv", row.names = FALSE)
+with(results, 
+     write.csv(data.frame(LakeID, WATERWAY, perchHG, FISHYEAR, Year, UseYear),
+                        file = "./UseYear/perchLoonHGData.csv", row.names = FALSE))
+
 
 
 
@@ -356,7 +375,7 @@ lgthSampleEvent2 <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
 lgthSampleEvent2
 ggsave('./plots/lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
 
-results
+write.csv(results, "./UseYear/LoonData.csv")
 
 #******************** Ploting loon Log Hh ppb against predicted fish Log Hg ppb with linear model
 predictedPlot <- ggplot(data = results, aes(x = HGppbLog, Predicted)) +
