@@ -1,9 +1,9 @@
 # perch_maps_v2
-
+.libPaths('D:/library/R')
 setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 # load data
-perchHG=read.csv("./UseYear/perchLoonHGData.csv")
+perchHG=read.csv("./UseYear/perchHGPredictData.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
 
@@ -29,10 +29,7 @@ join = sqldf("SELECT a.WATERWAY, b.perchHG, a.latitude, a.longitude FROM perchHG
              ")
 lakeHG = sqldf("SELECT WATERWAY, AVG(perchHG) perchHG, latitude, longitude FROM 'join' GROUP BY WATERWAY, latitude, longitude")
 lakeHG=lakeHG[!is.na(lakeHG$WATERWAY),]
-
-#BT hg
-# lakeHG <- as.data.table(lakeHG)
-# lakeHG <- lakeHG[, perchHGBT := exp(perchHG)]
+lakeHG = lakeHG[!is.na(lakeHG$longitude) & !is.na(lakeHG$latitude), ]
 
 # get mn map
 minnesota <- get_map("minnesota", zoom = 7)
@@ -66,7 +63,17 @@ point_map_plain = ggmap(minnesota) +
  # + scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG)))
 # scale_fill_gradient(low="red", high="green")
 # scale_alpha(range = c(0,0.6), guide=FALSE)
-png(filename="./Maps/point_map_plain.png", width=700, height=700)
+png(filename="./Maps/point_map_plain_z7.png", width=700, height=700)
+print(point_map_plain)
+dev.off()
+
+# plain plot of perch hg points zoom 6
+LogHgPpb=lakeHG$perchHG
+minnesota_z6 = get_map("minnesota", zoom = 6)
+point_map_plain = ggmap(minnesota_z6) +
+  geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=LogHgPpb)) + 
+  scale_fill_continuous(low="blue", high="black", limits=c(min(LogHgPpb), max(LogHgPpb)))
+png(filename="./Maps/point_map_plain_z6.png", width=700, height=700)
 print(point_map_plain)
 dev.off()
 
@@ -74,8 +81,8 @@ dev.off()
 minnesota <- get_map("minnesota", zoom = 6)
 heatmap_fishz6b8 = ggmap(minnesota) + stat_density2d(data=lakeHG, aes(x=longitude, y=latitude, fill=..level.., alpha=..level..),
                                                 geom="polygon", size=1, bins=8) +
-  scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG$perchHG))) +
-  # scale_fill_gradient(low="red", high="green")
+  # scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG$perchHG))) +
+  scale_fill_gradient(low="red", high="green") + 
   scale_alpha(range = c(0,0.7), guide=FALSE)
 png(filename="./Maps/heat_z6b8.png", width=1280, height=1280)
 print(heatmap_fishz6b8)
@@ -91,5 +98,51 @@ png(filename="./Maps/heat_z6b12.png", width=1280, height=1280)
 print(heatmap_fishz6b12)
 dev.off()
 
+#unique lat long
+lakeHG
+data = sqldf("SELECT COUNT(perchHG) perchHG, latitude, longitude FROM lakeHG GROUP BY latitude, longitude")
+sqldf("SELECT * FROM data WHERE perchHG > 2")
+
+# plotting perch hg with interpolated lat/long points
+ggmap(minnesota) + 
+  geom_tile(data = data, aes(x = longitude, y = latitude, fill = perchHG), alpha = 0.8) +
+  stat_contour(data = data, aes(x = longitude, y = latitude, z = perchHG)) +
+  ggtitle("Rwandan rainfall") +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  scale_fill_continuous(name = "perchHG (Hg)",
+                        low = "white", high = "blue") +
+  theme(plot.title = element_text(size = 25, face = "bold"),
+        legend.title = element_text(size = 15),
+        axis.text = element_text(size = 15),
+        axis.title.x = element_text(size = 20, vjust = -0.5),
+        axis.title.y = element_text(size = 20, vjust = 0.2),
+        legend.text = element_text(size = 10)) +
+  coord_map()
+
+  
+png(filename="./Maps/density1.png", width=1280, height=1280)
+print(density1)
+dev.off()
+
+#Trying interpolation
+library(sp)
+library(raster)
+#minnesota shapefile
+us<-getData('GADM', country='USA', level=2)
+minnesota=subset(us, NAME_1=="Minnesota")
+plot(minnesota)
+
+sp = SpatialPoints(lakeHG[,c("longitude", "latitude")], 
+                    proj4string = CRS("+proj=longlat +datum=WGS84"))
+sp = SpatialPointsDataFrame(sp, lakeHG)
+# cuts = seq(min(lakeHG$perchHG), max(lakeHG$perchHG), length.out=6)
+projection(cn) <- "+proj=longlat +datum=WGS84"
+# the CRS we want
+laea <- CRS("+proj=laea  +lat_0=0 +lon_0=-80")
+clb <- spTransform(cn, laea)
+pts <- spTransform(sp, laea)
+plot(clb, axes=TRUE)
+points(pts, col='red', cex=.5)
 
 ######################################################################

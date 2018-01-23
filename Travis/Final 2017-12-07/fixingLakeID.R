@@ -142,11 +142,44 @@ fishData[ NDyes == 1, Censor := TRUE]
 
 ########################################################################################## The following is from Travis
 
+# Then we run our model (must create named lists to avoid programming issues)
+HGppbLog = log(fishData$HGppm*1000 + 1)
+Censor = fishData$Censor
+LengthInchesLog = fishData$LgthinLog
+SppCut = fishData$SppCut
+SampleEvent = fishData$sampleEvent
+st <- system.time(
+  modelOut <-
+    cenreg( Cen(HGppbLog, Censor) ~
+              LengthInchesLog : SppCut  +
+              SampleEvent - 1, dist = 'gaussian')
+)
+modelOut
+# save the model
+save(modelOut, file = "fishHGmodelHgPpb.rda")
+
+# load the model
+load("fishHGmodelHgPpb.rda")
+
+# Join results with the data
+results=cbind(fishData, perchHG=modelOut@survreg$linear.predictors)
+head(results)
+
+# Add residuals column
+results = cbind(results, resids = residuals(modelOut))
+
+# Write all predicted perch hg results
+with(results, 
+      write.csv(results,
+      file = "./UseYear/perchHGPredictData.csv", row.names = FALSE))
+
+
+##### Join the fish and loon data and results
 #loon lake names
 unique(loonBlood$Lake)
 
 #fish lake names
-unique(fishData$WATERWAY)
+unique(results$WATERWAY)
 
 #fixing loon lake names (removing parenthesis that explain a location within a lake)
 loonBlood[, LakeFixed := Lake]
@@ -161,25 +194,25 @@ unique(loonBlood$LakeFixed)
 
 #add lowercase lake names to each table
 loonBlood[, LakeFixedLower := sapply(LakeFixed, tolower)]
-fishData[, WaterwayLower := sapply(WATERWAY, tolower)]
+results[, WaterwayLower := sapply(WATERWAY, tolower)]
 
 #loon lakes not found in fish data
-unique(loonBlood[loonBlood$LakeFixedLower %in% fishData$WaterwayLower,"LakeFixedLower"])
-fishData$WaterwayLower[grep("rabbit", fishData$WaterwayLower)]
+unique(loonBlood[loonBlood$LakeFixedLower %in% results$WaterwayLower,"LakeFixedLower"])
+results$WaterwayLower[grep("rabbit", results$WaterwayLower)]
 
 #finding "missing" lakes in fish data
-unique(fishData$WaterwayLower[grep("black|bird", fishData$WaterwayLower)]) # "blackduck"    "blackwater"   "blackhawk"    "black island" "black duck"
-unique(fishData$WaterwayLower[grep("south|tamarac", fishData$WaterwayLower)]) # "tamarack" "north tamarack" "south twin" "south center" "south lindstrom" "south fowl" "south" "upper south long" "lower south long" "south mcdougal" "south turtle" "south lida"
-unique(fishData$WaterwayLower[grep("north|tamarac", fishData$WaterwayLower)]) # "tamarack" "north tamarack" "north center" "north fowl" "northern light" "north" "north long" "north star" "north mcdougal" "north twin" "north turtle" "north lida" "north star steel" "north brown's"   
-unique(fishData$WaterwayLower[grep("mckeown", fishData$WaterwayLower)]) # none (is this misspelled?)
-unique(fishData$WaterwayLower[grep("mc", fishData$WaterwayLower)]) # none (is this misspelled?)
-unique(fishData$WaterwayLower[grep("point", fishData$WaterwayLower)]) # "many point" "disappointment" "sand point"
-unique(fishData$WaterwayLower[grep("eagles|nest", fishData$WaterwayLower)]) # "nest" "eagles nest #4" "eagles nest #1" "eagles nest #3"
-unique(fishData$WaterwayLower[grep("east|vermilion", fishData$WaterwayLower)]) # "east moore" "east twin" "east toqua" "east rush" "east pike" "east bearskin" "east pope" "east fox" "rabbit (east portion)" "east crooked" "east solomon" "big stone nwr east pool" "east" "east chub" "east graham" "east leaf" "east battle" "east lost" "east spirit" "east vadnais" "vermilion" "little vermilion" "beast" "east lake sylvia"
-unique(fishData$WaterwayLower[grep("arr|ow|head", fishData$WaterwayLower)]) # none
+unique(results$WaterwayLower[grep("black|bird", results$WaterwayLower)]) # "blackduck"    "blackwater"   "blackhawk"    "black island" "black duck"
+unique(results$WaterwayLower[grep("south|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "south twin" "south center" "south lindstrom" "south fowl" "south" "upper south long" "lower south long" "south mcdougal" "south turtle" "south lida"
+unique(results$WaterwayLower[grep("north|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "north center" "north fowl" "northern light" "north" "north long" "north star" "north mcdougal" "north twin" "north turtle" "north lida" "north star steel" "north brown's"   
+unique(results$WaterwayLower[grep("mckeown", results$WaterwayLower)]) # none (is this misspelled?)
+unique(results$WaterwayLower[grep("mc", results$WaterwayLower)]) # none (is this misspelled?)
+unique(results$WaterwayLower[grep("point", results$WaterwayLower)]) # "many point" "disappointment" "sand point"
+unique(results$WaterwayLower[grep("eagles|nest", results$WaterwayLower)]) # "nest" "eagles nest #4" "eagles nest #1" "eagles nest #3"
+unique(results$WaterwayLower[grep("east|vermilion", results$WaterwayLower)]) # "east moore" "east twin" "east toqua" "east rush" "east pike" "east bearskin" "east pope" "east fox" "rabbit (east portion)" "east crooked" "east solomon" "big stone nwr east pool" "east" "east chub" "east graham" "east leaf" "east battle" "east lost" "east spirit" "east vadnais" "vermilion" "little vermilion" "beast" "east lake sylvia"
+unique(results$WaterwayLower[grep("arr|ow|head", results$WaterwayLower)]) # none
 
 # Finding all names with "(", ")", "-" in fish data
-unique(fishData$WaterwayLower[grep("\\(|\\)|-", fishData$WaterwayLower)])
+unique(results$WaterwayLower[grep("\\(|\\)|-", results$WaterwayLower)])
 
 # Only values that may be effected by the symbols above is the rabbit lake
 sort(unique(loonBlood$LakeFixedLower))
@@ -194,7 +227,7 @@ loonBlood[grep("Rabbit|rabbit", loonBlood$Lake),]
 loonBlood[, UseYear := 0]
 for(lake in unique(loonBlood$LakeFixedLower)) {
   subLoon = subset(loonBlood, LakeFixedLower == lake)
-  subFishData = subset(fishData, WaterwayLower == lake)
+  subFishData = subset(results, WaterwayLower == lake)
   if(nrow(subFishData) > 0) {
     for(year in subLoon$Year) {
       subLoonYear = subset(subLoon, Year == year)
@@ -215,49 +248,20 @@ loonBloodFinal = subset(loonBlood, UseYear != 0)
 # Now we can do our final join to view joined data
 library(sqldf)
 
-test=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.YEAR = b.UseYear")
-test2=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear WHERE a.DOWID != b.LakeID")
-results=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
-unique(results[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
-unique(results$LakeFixedLower)
-unique(results[ grep("vermilion", results$Lake, ignore.case=T) ]$Lake)
-unique(results[ grep("monongalia", results$Lake, ignore.case=T) ]$Lake)
-unique(results[ grep("eagle", results$Lake, ignore.case=T) ]$Lake)
-unique(results[ grep("arrow", results$Lake, ignore.case=T) ]$Lake)
-unique(results[ grep("wild|rice", results$Lake, ignore.case=T) ]$Lake)
-unique(results$Lake)
+# test=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.YEAR = b.UseYear")
+# test2=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear WHERE a.DOWID != b.LakeID")
+results=sqldf("SELECT * FROM results AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
+# unique(results[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
+# unique(results$LakeFixedLower)
+# unique(results[ grep("vermilion", results$Lake, ignore.case=T) ]$Lake)
+# unique(results[ grep("monongalia", results$Lake, ignore.case=T) ]$Lake)
+# unique(results[ grep("eagle", results$Lake, ignore.case=T) ]$Lake)
+# unique(results[ grep("arrow", results$Lake, ignore.case=T) ]$Lake)
+# unique(results[ grep("wild|rice", results$Lake, ignore.case=T) ]$Lake)
+# unique(results$Lake)
 
 results <- data.table(results)
 results=cbind(results, HGppbLog = log(results$HGppm*1000 + 1))
-
-# converting ppm to ppb
-# results[, HGppbLog := log(HGppm*1000 + 1)]
-
-# Then we run our model (must create named lists to avoid programming issues)
-HGppbLog = log(results$HGppm*1000 + 1)
-Censor = results$Censor
-LengthInchesLog = results$LgthinLog
-SppCut = results$SppCut
-SampleEvent = results$sampleEvent
-st <- system.time(
-  modelOut <-
-    cenreg( Cen(HGppbLog, Censor) ~
-              LengthInchesLog : SppCut  +
-              SampleEvent - 1, dist = 'gaussian')
-)
-modelOut
-# save the model
-save(modelOut, file = "fishHGmodelTravisFinal.rda")
-
-# load the model
-# load("fishHGmodelTravisFinal.rda")
-
-# Join results with the data
-results=cbind(results, perchHG=modelOut@survreg$linear.predictors)
-head(results)
-
-# Add residuals column
-results = cbind(results, resids = residuals(modelOut))
 
 # Remove loonblood year column
 results = results[,FISHYEAR := YEAR]
@@ -279,14 +283,7 @@ results[LakeID == "000001", c("FISHYEAR", "Year", "UseYear")]
 # Write perch & loon joined data/results for loon analysis
 with(results, 
      write.csv(data.frame(LakeID, WATERWAY, perchHG, FISHYEAR, Year, UseYear),
-                        file = "./UseYear/perchLoonHGData.csv", row.names = FALSE))
-
-
-
-
-
-
-
+               file = "./UseYear/perchLoonHGData.csv", row.names = FALSE))
 
 
 ################################# run the analytics (Erickson's plots) /w Travis' edits

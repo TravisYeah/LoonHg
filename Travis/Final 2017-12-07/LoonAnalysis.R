@@ -85,9 +85,9 @@ write.csv(file = "./FinalData/LoonDataFinalUsed.csv", x = dHG2, row.names = FALS
 
 ## Analysis
 
-dHG2$HgLog
 out <- lm(HgLog ~ perchHG + Sex + Mass:Age, data = dHG2)
 summary(out)
+out$fitted.values
 confint(out, level = 0.95)
 
 par(mfcol = c(2,2))
