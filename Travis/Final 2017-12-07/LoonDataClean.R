@@ -53,25 +53,25 @@ for(index in 1:dim(lakeKey)[1]){
 
 dtUse[ Lake == "Stumpf Lake", Lake := "Stump Lake"]
 dtUse[, Lake := gsub("( Lake)|( Bay)|(Lake )", "", Lake)]
-dtUse[ grep("Burntside", Lake), Lake := "Burntside"]
-dtUse[ grep("Clearwater", Lake), Lake := "Clearwater"]
-dtUse[ grep("George", Lake), Lake := "George"]
-dtUse[ grep("Little Birch", Lake), Lake := "Little Birch"]
-dtUse[ Lake == "Mckeown", Lake := "McKeown"]
-dtUse[ Lake == "North Tamarack", Lake := "North Tamarac"]
-dtUse[ grep("Rabbit", Lake), Lake := gsub(" North| South", "", Lake)]
-dtUse[ grep("Rabbit", Lake), Lake := gsub("(East|West) (Rabbit)", "\\2 (\\1 Portion)", Lake)]
-dtUse[ Lake == "South Tamarack", Lake := "South Tamarac"]
-dtUse[ grep("Wild Rice", Lake), Lake := "Wild Rice"]
-dtUse[ grep("South Turtle", Lake), Lake := "South Turtle"]
+# dtUse[ grep("Burntside", Lake), Lake := "Burntside"]
+# dtUse[ grep("Clearwater", Lake), Lake := "Clearwater"]
+# dtUse[ grep("George", Lake), Lake := "George"]
+# dtUse[ grep("Little Birch", Lake), Lake := "Little Birch"]
+# dtUse[ Lake == "Mckeown", Lake := "McKeown"]
+# dtUse[ Lake == "North Tamarack", Lake := "North Tamarac"]
+# dtUse[ grep("Rabbit", Lake), Lake := gsub(" North| South", "", Lake)]
+# dtUse[ grep("Rabbit", Lake), Lake := gsub("(East|West) (Rabbit)", "\\2 (\\1 Portion)", Lake)]
+# dtUse[ Lake == "South Tamarack", Lake := "South Tamarac"]
+# dtUse[ grep("Wild Rice", Lake), Lake := "Wild Rice"]
+# dtUse[ grep("South Turtle", Lake), Lake := "South Turtle"]
 # Additional name changes
-dtUse[ grep("tamarac", Lake, ignore.case=T) , Lake := "Tamarack"]
-dtUse[ grep("monongalia", Lake, ignore.case=T) , Lake := "Monongalia"]
+# dtUse[ grep("tamarac", Lake, ignore.case=T) , Lake := "Tamarack"]
+# dtUse[ grep("monongalia", Lake, ignore.case=T) , Lake := "Monongalia"]
 
-unique(dtUse[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("vermilion", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("monongalia", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
+# unique(dtUse[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
+# unique(dtUse[ grep("vermilion", Lake, ignore.case=T) ]$Lake)
+# unique(dtUse[ grep("monongalia", Lake, ignore.case=T) ]$Lake)
+# unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
 
 ## Need to remove Marsh
 dtUse[ , unique(Lake)]
@@ -231,13 +231,6 @@ wqLakes[ LOC_DESC == "WEST_FOX", LakeID := 18029700]
 wqLakes[ LOC_DESC == "ANNA", LakeID := 56044800]
 wqLakes[ LOC_DESC == "STUMP", LakeID := 73009100]
 
-# Add lake name corrections
-dtUse[ grep("tamarac", Lake, ignore.case=T), Lake := "Tamarack" ]
-dtUse[ grep("vermilion", Lake, ignore.case=T), Lake := "Vermilion"]
-dtUse[ grep("monongalia", Lake, ignore.case=T), Lake := "Monongalia" ]
-unique(dtUse[ grep("eagle", Lake, ignore.case=T) ]$Lake)
-unique(dtUse[ grep("arrow", Lake, ignore.case=T) ]$Lake)
-
 setnames(wqLakes, 'LOC_DESC', 'WQ_Lakes')
 setnames(loonLakes, 'Lake', 'Loon_Lakes')
 
@@ -313,7 +306,7 @@ setkey(dWQ5, 'LakeID')
 dtThree <- copy(dWQ5[dtWide])
 dtThree[Lake == "Tamarack", LakeID := "000001"]
 
-# write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
+write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
 
 
 ###################

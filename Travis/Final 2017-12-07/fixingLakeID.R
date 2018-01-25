@@ -1,4 +1,5 @@
 .libPaths('D:/library/R')
+library(sqldf)
 library(data.table, lib = 'D:/library/R')
 library(ggplot2, lib = 'D:/library/R')
 library(NADA, lib = 'D:/library/R')
@@ -6,8 +7,7 @@ setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 ## load loon blood
 loonBlood <- fread("./inputData/LoonHGblood.csv")
-loonBlood[ , fishLakeID := LakeID]
-loonBlood[ , fishLakeID := gsub( "^0", "", fishLakeID)]
+loonBlood[ , LakeID := gsub( "^0", "", LakeID)]
 
 ## Load data and reformat it
 fishDataRaw <- fread("./inputData/fishUse.csv")
@@ -38,20 +38,48 @@ fishData[ WATERWAY == "VERMILION", DOWID := '69037801']
 loonBlood
 fishData
 
-## Pool all Tamarack data
+## Pool all Tamarac data
 fishData[ grep("3024100|3024102|9006700", DOWID), DOWID := "3024101" ]
-loonBlood[ grep("3024100|3024102|9006700", fishLakeID), fishLakeID := "3024101"]
+loonBlood[ grep("3024100|3024102|9006700", LakeID), LakeID := "3024101"]
 
-## change east fox lake to be west fox lake
-loonBlood[ grep("East Fox", Lake), fishLakeID := "18029700"]
-#################TODO this creates a column of 
-#################NA values since only EAST FOX waterways will get values for id
-#fishData[ grep("EAST FOX", WATERWAY), fishLakeID := "18029700"] 
-#fishData[ grep("EAST FOX", WATERWAY), ] #shown waterway EAST FOX rows here
-#################Trying to fix by creating id col from loonblood
+# Fix south tamarac data by name
+loonBlood[ grep("tamarac", Lake, ignore.case=T), ]
+fishData[ grep("tamarac", WATERWAY, ignore.case=T), ]
 
-loonBlood
-fishData
+# Fix north tamarac data by name
+loonBlood[ grep("tamarac", Lake, ignore.case=T), ]
+fishData[ grep("tamarac", WATERWAY, ignore.case=T), ]
+
+# Pool all George data
+fishData[ grep("GEORGE", WATERWAY, ignore.case = T), DOWID := "02009100"]
+loonBlood[ grep("george", Lake, ignore.case = T), LakeID := "02009100" ]
+
+# Pool all clearwater data (CUSTOM ID)
+fishData[grep("clearwater", WATERWAY, ignore.case=T), DOWID := "849308240824"]
+loonBlood[grep("clearwater", Lake, ignore.case=T), LakeID := "849308240824"]
+
+## change east fox lake to be west fox lake (this was an Erickson change)
+loonBlood[ grep("East Fox", Lake), LakeID := "18029700"]
+loonBlood[ grep("East Fox", Lake), Lake := "West Fox"]
+
+# Pool all east rabbit data
+loonBlood[grep("east rabbit", Lake, ignore.case=T), LakeID := "8235982375"]
+fishData[grep("(east.*rabbit)|(rabbit.*east)", WATERWAY, ignore.case=T), DOWID := "8235982375"]
+
+# pool all west rabbit data
+loonBlood[grep("west rabbit", Lake, ignore.case=T), LakeID := "18009302"]
+
+#pool all burntside data
+loonBlood[grep("burntside", Lake, ignore.case=T), LakeID := "69011800" ]
+
+#pool all little burch
+loonBlood[grep("little birch", Lake, ignore.case=T), LakeID := "77008900"]
+
+#pool wild rice data
+loonBlood[grep("wild|rice", Lake, ignore.case=T), LakeID := "69037100"]
+
+#pool south turtle data
+loonBlood[grep("(south.*turtle)|(turtle.*south)", Lake, ignore.case = T), LakeID := "56037700"]
 
 ## Enter in non-detect codes 
 ndCodes <- c("K", "KM", "ND")
@@ -181,66 +209,66 @@ unique(loonBlood$Lake)
 #fish lake names
 unique(results$WATERWAY)
 
-#fixing loon lake names (removing parenthesis that explain a location within a lake)
-loonBlood[, LakeFixed := Lake]
-loonBlood[grep("Rabbit", Lake), LakeFixed := "Rabbit"]
-loonBlood[grep("Mantrap", Lake), LakeFixed := "Mantrap"]
-loonBlood[grep("Big Birch", Lake), LakeFixed := "Big Birch"]
-loonBlood[grep("Arrowhead", Lake), LakeFixed := "Arrowhead"]
-loonBlood[grep("Monongalia", Lake), LakeFixed := "Monongalia"]
+##fixing loon lake names (removing parenthesis that explain a location within a lake)
+# loonBlood[, LakeFixed := Lake]
+# loonBlood[grep("Rabbit", Lake), LakeFixed := "Rabbit"]
+# loonBlood[grep("Mantrap", Lake), LakeFixed := "Mantrap"]
+# loonBlood[grep("Big Birch", Lake), LakeFixed := "Big Birch"]
+# loonBlood[grep("Arrowhead", Lake), LakeFixed := "Arrowhead"]
+# loonBlood[grep("Monongalia", Lake), LakeFixed := "Monongalia"]
 
-#fixed loon lake names
-unique(loonBlood$LakeFixed)
+##fixed loon lake names
+# unique(loonBlood$LakeFixed)
 
-#add lowercase lake names to each table
-loonBlood[, LakeFixedLower := sapply(LakeFixed, tolower)]
-results[, WaterwayLower := sapply(WATERWAY, tolower)]
+##add lowercase lake names to each table
+# loonBlood[, LakeFixedLower := sapply(LakeFixed, tolower)]
+# results[, WaterwayLower := sapply(WATERWAY, tolower)]
 
-#loon lakes not found in fish data
-unique(loonBlood[loonBlood$LakeFixedLower %in% results$WaterwayLower,"LakeFixedLower"])
-results$WaterwayLower[grep("rabbit", results$WaterwayLower)]
+##loon lakes not found in fish data
+# unique(loonBlood[loonBlood$LakeFixedLower %in% results$WaterwayLower,"LakeFixedLower"])
+# results$WaterwayLower[grep("rabbit", results$WaterwayLower)]
 
-#finding "missing" lakes in fish data
-unique(results$WaterwayLower[grep("black|bird", results$WaterwayLower)]) # "blackduck"    "blackwater"   "blackhawk"    "black island" "black duck"
-unique(results$WaterwayLower[grep("south|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "south twin" "south center" "south lindstrom" "south fowl" "south" "upper south long" "lower south long" "south mcdougal" "south turtle" "south lida"
-unique(results$WaterwayLower[grep("north|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "north center" "north fowl" "northern light" "north" "north long" "north star" "north mcdougal" "north twin" "north turtle" "north lida" "north star steel" "north brown's"   
-unique(results$WaterwayLower[grep("mckeown", results$WaterwayLower)]) # none (is this misspelled?)
-unique(results$WaterwayLower[grep("mc", results$WaterwayLower)]) # none (is this misspelled?)
-unique(results$WaterwayLower[grep("point", results$WaterwayLower)]) # "many point" "disappointment" "sand point"
-unique(results$WaterwayLower[grep("eagles|nest", results$WaterwayLower)]) # "nest" "eagles nest #4" "eagles nest #1" "eagles nest #3"
-unique(results$WaterwayLower[grep("east|vermilion", results$WaterwayLower)]) # "east moore" "east twin" "east toqua" "east rush" "east pike" "east bearskin" "east pope" "east fox" "rabbit (east portion)" "east crooked" "east solomon" "big stone nwr east pool" "east" "east chub" "east graham" "east leaf" "east battle" "east lost" "east spirit" "east vadnais" "vermilion" "little vermilion" "beast" "east lake sylvia"
-unique(results$WaterwayLower[grep("arr|ow|head", results$WaterwayLower)]) # none
+# #finding "missing" lakes in fish data
+# unique(results$WaterwayLower[grep("black|bird", results$WaterwayLower)]) # "blackduck"    "blackwater"   "blackhawk"    "black island" "black duck"
+# unique(results$WaterwayLower[grep("south|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "south twin" "south center" "south lindstrom" "south fowl" "south" "upper south long" "lower south long" "south mcdougal" "south turtle" "south lida"
+# unique(results$WaterwayLower[grep("north|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "north center" "north fowl" "northern light" "north" "north long" "north star" "north mcdougal" "north twin" "north turtle" "north lida" "north star steel" "north brown's"   
+# unique(results$WaterwayLower[grep("mckeown", results$WaterwayLower)]) # none (is this misspelled?)
+# unique(results$WaterwayLower[grep("mc", results$WaterwayLower)]) # none (is this misspelled?)
+# unique(results$WaterwayLower[grep("point", results$WaterwayLower)]) # "many point" "disappointment" "sand point"
+# unique(results$WaterwayLower[grep("eagles|nest", results$WaterwayLower)]) # "nest" "eagles nest #4" "eagles nest #1" "eagles nest #3"
+# unique(results$WaterwayLower[grep("east|vermilion", results$WaterwayLower)]) # "east moore" "east twin" "east toqua" "east rush" "east pike" "east bearskin" "east pope" "east fox" "rabbit (east portion)" "east crooked" "east solomon" "big stone nwr east pool" "east" "east chub" "east graham" "east leaf" "east battle" "east lost" "east spirit" "east vadnais" "vermilion" "little vermilion" "beast" "east lake sylvia"
+# unique(results$WaterwayLower[grep("arr|ow|head", results$WaterwayLower)]) # none
 
 # Finding all names with "(", ")", "-" in fish data
-unique(results$WaterwayLower[grep("\\(|\\)|-", results$WaterwayLower)])
+# unique(results$WaterwayLower[grep("\\(|\\)|-", results$WaterwayLower)])
 
 # Only values that may be effected by the symbols above is the rabbit lake
-sort(unique(loonBlood$LakeFixedLower))
+# sort(unique(loonBlood$LakeFixedLower))
 
 # Here are the effected four rows from the un-QA'd data (these lakes were converted to just "rabbit" after my QA)
-loonBlood[grep("Rabbit|rabbit", loonBlood$Lake),]
+# loonBlood[grep("Rabbit|rabbit", loonBlood$Lake),]
 
 # If we are focusing on just lakes (not portions of a lake), let's remove the words specifying positions
 # fishData[grep("rabbit", WaterwayLower), WaterwayLower := "rabbit"]
 
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
 loonBlood[, UseYear := 0]
-for(lake in unique(loonBlood$LakeFixedLower)) {
-  subLoon = subset(loonBlood, LakeFixedLower == lake)
-  subFishData = subset(results, WaterwayLower == lake)
+for(id in unique(loonBlood$LakeID)) {
+  subLoon = subset(loonBlood, LakeID == id)
+  subFishData = subset(results, DOWID == id)
   if(nrow(subFishData) > 0) {
     for(year in subLoon$Year) {
       subLoonYear = subset(subLoon, Year == year)
       closestYear = subFishData$YEAR[which(abs(subFishData$YEAR-year) == min(abs(subFishData$YEAR-year)))[1]]
       #update loonblood UseYear with closest year
-      loonBlood[LakeFixedLower == lake & Year == year, "UseYear"] = closestYear
+      loonBlood[LakeID == id & Year == year, "UseYear"] = closestYear
     }
   }
 }
 
-# UseYear == 0 indicates that there were not matching fish lake names for that loon lake name
-loonBlood
-unique(loonBlood$LakeFixedLower)
+# Save all unique lake-id combos before removing data with no matches
+unique_loons_full = sqldf("SELECT Lake, LakeID, COUNT(*) cnt FROM loonBlood GROUP BY Lake, LakeID ORDER BY Lake, LakeID")
+write.csv(unique_loons_full, "./unique lake-id combinations/unique_loons_full.csv", row.names = F)
 
 # Remove missing data
 loonBloodFinal = subset(loonBlood, UseYear != 0)
@@ -248,37 +276,43 @@ loonBloodFinal = subset(loonBlood, UseYear != 0)
 # Now we can do our final join to view joined data
 library(sqldf)
 
-# test=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.YEAR = b.UseYear")
-# test2=sqldf("SELECT * FROM fishData AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear WHERE a.DOWID != b.LakeID")
-results=sqldf("SELECT * FROM results AS a JOIN loonBlood AS b ON a.WaterwayLower = b.LakeFixedLower AND a.YEAR = b.UseYear")
-# unique(results[ grep("tamarac", Lake, ignore.case=T) ]$Lake)
-# unique(results$LakeFixedLower)
-# unique(results[ grep("vermilion", results$Lake, ignore.case=T) ]$Lake)
-# unique(results[ grep("monongalia", results$Lake, ignore.case=T) ]$Lake)
-# unique(results[ grep("eagle", results$Lake, ignore.case=T) ]$Lake)
-# unique(results[ grep("arrow", results$Lake, ignore.case=T) ]$Lake)
-# unique(results[ grep("wild|rice", results$Lake, ignore.case=T) ]$Lake)
-# unique(results$Lake)
+results[, FISHYEAR := YEAR]
+
+# View all lake-id combinations
+unique_fish = sqldf("SELECT WATERWAY, DOWID, COUNT(*) cnt FROM results GROUP BY WATERWAY, DOWID ORDER BY WATERWAY, DOWID")
+unique_loons = sqldf("SELECT Lake, LakeID, COUNT(*) cnt FROM loonBloodFinal GROUP BY Lake, LakeID ORDER BY Lake, LakeID")
+
+# store unique lake/loon lake-id combinations
+write.csv(unique_fish, "./unique lake-id combinations/unique_fish.csv", row.names = F)
+
+# Lakes in loon data that are missing from fish data
+loon_fish_no_match = sqldf("SELECT a.Lake, a.LakeID, b.LakeID FROM unique_loons_full a LEFT JOIN unique_loons b ON a.LakeID = b.LakeID")
+write.csv(loon_fish_no_match, "./unique lake-id combinations/loon_fish_no_match.csv", row.names=F)
+
+#join loonblood data to results
+results=sqldf("SELECT * FROM results AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.FISHYEAR = b.UseYear")
+
+# Remove loonblood year column
+results = results[,-c(1)]
+results = results[,-c(3)]
+
+#compare lake names & id's
+compare = sqldf("SELECT WATERWAY, DOWID, Lake, LakeID, COUNT(*) cnt FROM results GROUP BY WATERWAY, DOWID, Lake, LakeID")
 
 results <- data.table(results)
 results=cbind(results, HGppbLog = log(results$HGppm*1000 + 1))
 
-# Remove loonblood year column
-results = results[,FISHYEAR := YEAR]
-results = results[, -c("YEAR")]
-results = results[,-c("V1")]
-
 # Check columns matching lake names
-data.frame(sqldf("SELECT LakeID, WATERWAY, LakeFixed FROM results GROUP BY LakeID, WATERWAY, LakeFixed"))
+# data.frame(sqldf("SELECT LakeID, WATERWAY, LakeFixed FROM results GROUP BY LakeID, WATERWAY, LakeFixed"))
 
 # Corrections
-results[LakeID == "18009302", LakeID := "18009301"]
-results[LakeID == "34015802", WATERWAY := 'Monongalia - Middle Fork Crow River']
-results[LakeID == "34015802", LakeFixed := 'Monongalia - Middle Fork Crow River']
-results[WATERWAY == "TAMARACK", LakeID := "000001"]
+# results[LakeID == "18009302", LakeID := "18009301"]
+# results[LakeID == "34015802", WATERWAY := 'Monongalia - Middle Fork Crow River']
+# results[LakeID == "34015802", LakeFixed := 'Monongalia - Middle Fork Crow River']
+# results[WATERWAY == "TAMARACK", LakeID := "000001"]
 
 # Use Year
-results[LakeID == "000001", c("FISHYEAR", "Year", "UseYear")]
+# results[LakeID == "000001", c("FISHYEAR", "Year", "UseYear")]
 
 # Write perch & loon joined data/results for loon analysis
 with(results, 
