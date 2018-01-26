@@ -209,7 +209,7 @@ dWQ2 <- copy(dWQ2[ , list(SECCHI = median(SECCHI, na.rm = TRUE), Phosp = median(
 
 
 ## NEXT, convert Date to date formate as well as time, then remove months outsides of
-## of May through July (
+## of May through July
 
 dWQ2[, SAMPLE_DATE :=  as.POSIXct(SAMPLE_DATE, format = "%m/%d/%Y")]
 library(lubridate)
@@ -291,22 +291,61 @@ dWQ3[ grep("TURT", LOC_DESC), max(MAX_DEPTH, na.rm = TRUE)]
 dWQ5[ grep("TURT", LOC_DESC) ]
 dtWide[ grep("Turt", Lake) ]
 
-
+# Get dates and months
 dWQ3[ , Date := as_date(SAMPLE_DATE)]
 dWQ3[ , Month:= month(Date)]
 
+# Write loon data for fish model
+write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
 
+########################################
+###### CORRECT WATER QUALITY ID's ######
+########################################
 
-# write.csv(x = dWQ5, file = "WaterQualityCheck27July17.csv", row.names = FALSE)
+dWQ5[ , LakeID := gsub( "^0", "", LakeID)]
+dtWide[ , LakeID := gsub( "^0", "", LakeID)]
+dtWide[ grep("tamarac", Lake, ignore.case=T), LakeID := "3024102"]
+dtWide[ grep("george", Lake, ignore.case = T), LakeID := "2009100" ]
+dtWide[grep("clearwater", Lake, ignore.case=T), LakeID := "18003800"]
+dtWide[ grep("East Fox", Lake), LakeID := "18029700"]
+dtWide[ grep("West Fox", Lake), LakeID := "18029700"]
+dtWide[grep("east rabbit", Lake, ignore.case=T), LakeID := "18009301"]
+dtWide[grep("west rabbit", Lake, ignore.case=T), LakeID := "18009302"]
+dtWide[grep("burntside", Lake, ignore.case=T), LakeID := "69011800" ]
+dtWide[grep("little birch", Lake, ignore.case=T), LakeID := "77008900"]
+dtWide[grep("77008401", LakeID, ignore.case=T), LakeID := "77008400"]
+dtWide[grep("wild|rice", Lake, ignore.case=T), LakeID := "69037100"]
+dtWide[grep("(south.*turtle)|(turtle.*south)", Lake, ignore.case = T), LakeID := "56037700"]
+dtWide[grep("Mantrap", Lake, ignore.case = T), LakeID := "29015100"]
+dtWide[grep("East Vermilion", Lake, ignore.case = T), LakeID := "69037800"]
+dtWide[grep("Monongalia", Lake, ignore.case = T), LakeID := "34015800"]
+dtWide[dtWide$Lake == "East Fox", "LakeID"] = "18029800"
+dtWide[dtWide$Lake == "South Tamarack", "LakeID"] = "3024101"
+dtWide[ grep("tamarac", dtWide$Lake, ignore.case=T), "LakeID"] = "3024102"
+dtWide[ grep("george", dtWide$Lake, ignore.case = T), "LakeID"] = "2009100"
+dtWide[grep("clearwater", dtWide$Lake, ignore.case=T), "LakeID"] = "18003800"
+dtWide[ grep("East Fox", dtWide$Lake), "LakeID"] = "18029800"
+dtWide[grep("77008400", dtWide$LakeID, ignore.case=T), "LakeID"] = "77008401" #big birch
+dtWide[grep("29015100", dtWide$LakeID, ignore.case = T), "LakeID"] = "29015104" #mantrap
+dtWide[grep("69037800", dtWide$LakeID, ignore.case = T), "LakeID"] = "69037801" #east vermilion
+dtWide[grep("Monongalia - main", dtWide$Lake, ignore.case = T), "LakeID"] = "34015801"
+dtWide[grep("Monongalia.*crow", dtWide$Lake, ignore.case = T), "LakeID"] = "34015802"
+dtWide[grep("Mckeown", dtWide$Lake, ignore.case = T), "LakeID"] = "11026100"
+dtWide[grep("stump", dtWide$Lake, ignore.case = T), ]
 
+########################################
+########################################
+########################################
+
+# # set keys for joining
 setkey(dtWide, 'LakeID')
 setkey(dWQ5, 'LakeID')
 
 ## Merge data together
 dtThree <- copy(dWQ5[dtWide])
-dtThree[Lake == "Tamarack", LakeID := "000001"]
 
-write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
+# Write water quality data
+write.csv(x = dWQ5, file = "WaterQualityCheck27July17.csv", row.names = FALSE)
 
 
 ###################
@@ -315,44 +354,21 @@ write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
 ###################
 ###################
 
-##################test
+perchHG <- fread("./UseYear/perchHGAvg.csv")
 
-##################
-
-
-## Now, merge in Hg model
-getwd()
-list.files("./UseYear")
-perchHG <- fread("./UseYear/perchLoonHGData.csv")
-# perchHG[ Lake == "Loon", LakeID := '111111111']
-# perchHG[ Lake == 'Wild Rice', perchHG := mean(perchHG, na.rm = TRUE) ]
-
+# Create lakeYearID for perch/water data
 perchHG[ , lakeYearID := paste(LakeID, Year, sep = "_")]
 dtThree[ , lakeYearID := paste(LakeID, Year, sep = "_")]
 
-## Merge together data
+# Set keys for joining data
 setkey(dtThree, "lakeYearID")
 setkey(perchHG, "lakeYearID")
 
-perchHG2 <- copy(perchHG[ , list(perchHG = mean(perchHG)), by = lakeYearID])
+# join water quality data to perch/loon data
+dtFour <- perchHG[dtThree]
 
-# perchHG2[ lakeYearID == '2009100_2012', lakeYearID := '02009100_2012']
-# perchHG2[ lakeYearID == '2009100_2014', lakeYearID := '02009100_2014']
+# check NAs
+nrow(dtFour[!is.na(perchHG),])
 
-setkey(perchHG2, "lakeYearID")
-
-dtFour <- perchHG2[dtThree]
-
-## Use West Fox's data for east Fox HG
-# dtFour[ lakeYearID == "18029800_2011", perchHG :=
-#            dtFour[ lakeYearID == "18029700_2012", unique(perchHG)]]
-
-##
-# dtFour[ grepl('MUD_MONOGALIA', LOC_DESC), perchHG := dtFour[ grepl('MONOGALIA_MIDDLE_FORK_CROW_RIVER', LOC_DESC), unique(perchHG)]]
-
-dtFour[ is.na(perchHG), ]
-
-write.csv(file = "./FinalData/LoonData.csv",
+write.csv(file = "./UseYear/LoonData.csv",
           x = dtFour, row.names = FALSE)
-
-

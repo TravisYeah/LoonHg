@@ -3,6 +3,7 @@ library(sqldf)
 library(data.table, lib = 'D:/library/R')
 library(ggplot2, lib = 'D:/library/R')
 library(NADA, lib = 'D:/library/R')
+library(sqldf)
 setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 ## load loon blood
@@ -22,52 +23,31 @@ fishData[ , LgthcmLog := log(Lgthcm + 1)]
 fishData[ , SppCut := paste(Spec, Anat, sep = "_")]
 fishData[ , sampleEvent := paste(DOWID, YEAR, sep = "_")]
 
-## Edit lake codes
-## CHANGE Mantrap to match mantrap used with WQ
-fishData[ WATERWAY == "MANTRAP", DOWID := '29015104']
+####################### Edit lake codes
 
-## Change MONONGALIA to match Monogalia used with WQ
-fishData[ WATERWAY == "MONONGALIA", DOWID := '34015802']
-
-## Change BIG BIRCH to match BIG BIRCH used with WQ
-fishData[ WATERWAY == "BIG BIRCH", DOWID := '77008401']
-
-## Change VERMILION to match EAST VERMILION USED with WQ
-fishData[ WATERWAY == "VERMILION", DOWID := '69037801']
-
-loonBlood
-fishData
-
-## Pool all Tamarac data
-fishData[ grep("3024100|3024102|9006700", DOWID), DOWID := "3024101" ]
-loonBlood[ grep("3024100|3024102|9006700", LakeID), LakeID := "3024101"]
-
-# Fix south tamarac data by name
-loonBlood[ grep("tamarac", Lake, ignore.case=T), ]
-fishData[ grep("tamarac", WATERWAY, ignore.case=T), ]
-
-# Fix north tamarac data by name
-loonBlood[ grep("tamarac", Lake, ignore.case=T), ]
-fishData[ grep("tamarac", WATERWAY, ignore.case=T), ]
+# Pool tamarac data
+loonBlood[ grep("tamarac", Lake, ignore.case=T), LakeID := "3024102"]
+fishData[ grep("3024100|3024102", DOWID, ignore.case=T), DOWID := "3024102"]
 
 # Pool all George data
-fishData[ grep("GEORGE", WATERWAY, ignore.case = T), DOWID := "02009100"]
-loonBlood[ grep("george", Lake, ignore.case = T), LakeID := "02009100" ]
+fishData[ grep("GEORGE", WATERWAY, ignore.case = T), DOWID := "2009100"]
+loonBlood[ grep("george", Lake, ignore.case = T), LakeID := "2009100" ]
 
 # Pool all clearwater data (CUSTOM ID)
-fishData[grep("clearwater", WATERWAY, ignore.case=T), DOWID := "849308240824"]
-loonBlood[grep("clearwater", Lake, ignore.case=T), LakeID := "849308240824"]
+fishData[grep("clearwater", WATERWAY, ignore.case=T), DOWID := "18003800"]
+loonBlood[grep("clearwater", Lake, ignore.case=T), LakeID := "18003800"]
 
-## change east fox lake to be west fox lake (this was an Erickson change)
+## pool fox lake
 loonBlood[ grep("East Fox", Lake), LakeID := "18029700"]
-loonBlood[ grep("East Fox", Lake), Lake := "West Fox"]
+loonBlood[ grep("West Fox", Lake), LakeID := "18029700"]
 
 # Pool all east rabbit data
-loonBlood[grep("east rabbit", Lake, ignore.case=T), LakeID := "8235982375"]
-fishData[grep("(east.*rabbit)|(rabbit.*east)", WATERWAY, ignore.case=T), DOWID := "8235982375"]
+loonBlood[grep("east rabbit", Lake, ignore.case=T), LakeID := "18009301"]
+fishData[grep("(east.*rabbit)|(rabbit.*east)", WATERWAY, ignore.case=T), DOWID := "18009301"]
 
 # pool all west rabbit data
 loonBlood[grep("west rabbit", Lake, ignore.case=T), LakeID := "18009302"]
+fishData[grep("18009300|18009302", DOWID, ignore.case=T), DOWID := "18009302"]
 
 #pool all burntside data
 loonBlood[grep("burntside", Lake, ignore.case=T), LakeID := "69011800" ]
@@ -75,11 +55,23 @@ loonBlood[grep("burntside", Lake, ignore.case=T), LakeID := "69011800" ]
 #pool all little burch
 loonBlood[grep("little birch", Lake, ignore.case=T), LakeID := "77008900"]
 
+#pool all big burch
+loonBlood[grep("77008401", LakeID, ignore.case=T), LakeID := "77008400"]
+
 #pool wild rice data
 loonBlood[grep("wild|rice", Lake, ignore.case=T), LakeID := "69037100"]
 
 #pool south turtle data
 loonBlood[grep("(south.*turtle)|(turtle.*south)", Lake, ignore.case = T), LakeID := "56037700"]
+
+# mantrap
+loonBlood[grep("Mantrap", Lake, ignore.case = T), LakeID := "29015100"]
+
+# east vermilion
+loonBlood[grep("East Vermilion", Lake, ignore.case = T), LakeID := "69037800"]
+
+# monongalia
+loonBlood[grep("Monongalia", Lake, ignore.case = T), LakeID := "34015800"]
 
 ## Enter in non-detect codes 
 ndCodes <- c("K", "KM", "ND")
@@ -168,7 +160,13 @@ fishData[ , length(HGppm), by = sampleEvent][ order(V1, decreasing = FALSE),][ V
 fishData[ , Censor := FALSE]
 fishData[ NDyes == 1, Censor := TRUE]
 
-########################################################################################## The following is from Travis
+########################################
+########################################
+####### RUN THE MODEL OR LOAD IT #######
+########################################
+########################################
+
+#### RUN ####
 
 # Then we run our model (must create named lists to avoid programming issues)
 HGppbLog = log(fishData$HGppm*1000 + 1)
@@ -185,9 +183,14 @@ st <- system.time(
 modelOut
 # save the model
 save(modelOut, file = "fishHGmodelHgPpb.rda")
+save(modelOut, file = "fishHGmodelHgPpbTest.rda")
+
+#### OR ####
 
 # load the model
 load("fishHGmodelHgPpb.rda")
+
+############
 
 # Join results with the data
 results=cbind(fishData, perchHG=modelOut@survreg$linear.predictors)
@@ -200,56 +203,6 @@ results = cbind(results, resids = residuals(modelOut))
 with(results, 
       write.csv(results,
       file = "./UseYear/perchHGPredictData.csv", row.names = FALSE))
-
-
-##### Join the fish and loon data and results
-#loon lake names
-unique(loonBlood$Lake)
-
-#fish lake names
-unique(results$WATERWAY)
-
-##fixing loon lake names (removing parenthesis that explain a location within a lake)
-# loonBlood[, LakeFixed := Lake]
-# loonBlood[grep("Rabbit", Lake), LakeFixed := "Rabbit"]
-# loonBlood[grep("Mantrap", Lake), LakeFixed := "Mantrap"]
-# loonBlood[grep("Big Birch", Lake), LakeFixed := "Big Birch"]
-# loonBlood[grep("Arrowhead", Lake), LakeFixed := "Arrowhead"]
-# loonBlood[grep("Monongalia", Lake), LakeFixed := "Monongalia"]
-
-##fixed loon lake names
-# unique(loonBlood$LakeFixed)
-
-##add lowercase lake names to each table
-# loonBlood[, LakeFixedLower := sapply(LakeFixed, tolower)]
-# results[, WaterwayLower := sapply(WATERWAY, tolower)]
-
-##loon lakes not found in fish data
-# unique(loonBlood[loonBlood$LakeFixedLower %in% results$WaterwayLower,"LakeFixedLower"])
-# results$WaterwayLower[grep("rabbit", results$WaterwayLower)]
-
-# #finding "missing" lakes in fish data
-# unique(results$WaterwayLower[grep("black|bird", results$WaterwayLower)]) # "blackduck"    "blackwater"   "blackhawk"    "black island" "black duck"
-# unique(results$WaterwayLower[grep("south|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "south twin" "south center" "south lindstrom" "south fowl" "south" "upper south long" "lower south long" "south mcdougal" "south turtle" "south lida"
-# unique(results$WaterwayLower[grep("north|tamarac", results$WaterwayLower)]) # "tamarack" "north tamarack" "north center" "north fowl" "northern light" "north" "north long" "north star" "north mcdougal" "north twin" "north turtle" "north lida" "north star steel" "north brown's"   
-# unique(results$WaterwayLower[grep("mckeown", results$WaterwayLower)]) # none (is this misspelled?)
-# unique(results$WaterwayLower[grep("mc", results$WaterwayLower)]) # none (is this misspelled?)
-# unique(results$WaterwayLower[grep("point", results$WaterwayLower)]) # "many point" "disappointment" "sand point"
-# unique(results$WaterwayLower[grep("eagles|nest", results$WaterwayLower)]) # "nest" "eagles nest #4" "eagles nest #1" "eagles nest #3"
-# unique(results$WaterwayLower[grep("east|vermilion", results$WaterwayLower)]) # "east moore" "east twin" "east toqua" "east rush" "east pike" "east bearskin" "east pope" "east fox" "rabbit (east portion)" "east crooked" "east solomon" "big stone nwr east pool" "east" "east chub" "east graham" "east leaf" "east battle" "east lost" "east spirit" "east vadnais" "vermilion" "little vermilion" "beast" "east lake sylvia"
-# unique(results$WaterwayLower[grep("arr|ow|head", results$WaterwayLower)]) # none
-
-# Finding all names with "(", ")", "-" in fish data
-# unique(results$WaterwayLower[grep("\\(|\\)|-", results$WaterwayLower)])
-
-# Only values that may be effected by the symbols above is the rabbit lake
-# sort(unique(loonBlood$LakeFixedLower))
-
-# Here are the effected four rows from the un-QA'd data (these lakes were converted to just "rabbit" after my QA)
-# loonBlood[grep("Rabbit|rabbit", loonBlood$Lake),]
-
-# If we are focusing on just lakes (not portions of a lake), let's remove the words specifying positions
-# fishData[grep("rabbit", WaterwayLower), WaterwayLower := "rabbit"]
 
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
 loonBlood[, UseYear := 0]
@@ -266,160 +219,163 @@ for(id in unique(loonBlood$LakeID)) {
   }
 }
 
-# Save all unique lake-id combos before removing data with no matches
-unique_loons_full = sqldf("SELECT Lake, LakeID, COUNT(*) cnt FROM loonBlood GROUP BY Lake, LakeID ORDER BY Lake, LakeID")
-write.csv(unique_loons_full, "./unique lake-id combinations/unique_loons_full.csv", row.names = F)
+# Get the lakes that didn't find a match
+loonBlood[UseYear == 0, ]
+
+# # Save all unique lake-id combos before removing data with no matches
+# unique_loons_full = sqldf("SELECT Lake, LakeID, COUNT(*) cnt FROM loonBlood GROUP BY Lake, LakeID ORDER BY Lake, LakeID")
+# write.csv(unique_loons_full, "./unique lake-id combinations/unique_loons_full.csv", row.names = F)
 
 # Remove missing data
 loonBloodFinal = subset(loonBlood, UseYear != 0)
 
-# Now we can do our final join to view joined data
-library(sqldf)
-
+# Change year for fish
 results[, FISHYEAR := YEAR]
 
-# View all lake-id combinations
-unique_fish = sqldf("SELECT WATERWAY, DOWID, COUNT(*) cnt FROM results GROUP BY WATERWAY, DOWID ORDER BY WATERWAY, DOWID")
-unique_loons = sqldf("SELECT Lake, LakeID, COUNT(*) cnt FROM loonBloodFinal GROUP BY Lake, LakeID ORDER BY Lake, LakeID")
+# Remove columns
+results[, YEAR := NULL]
+results[, V1 := NULL]
 
-# store unique lake/loon lake-id combinations
-write.csv(unique_fish, "./unique lake-id combinations/unique_fish.csv", row.names = F)
+## View all lake-id combinations
+# unique_fish_final = sqldf("SELECT WATERWAY, DOWID, COUNT(*) cnt FROM results GROUP BY WATERWAY, DOWID ORDER BY WATERWAY, DOWID")
+# unique_loons_final = sqldf("SELECT Lake, LakeID, COUNT(*) cnt FROM loonBloodFinal GROUP BY Lake, LakeID ORDER BY Lake, LakeID")
 
-# Lakes in loon data that are missing from fish data
-loon_fish_no_match = sqldf("SELECT a.Lake, a.LakeID, b.LakeID FROM unique_loons_full a LEFT JOIN unique_loons b ON a.LakeID = b.LakeID")
-write.csv(loon_fish_no_match, "./unique lake-id combinations/loon_fish_no_match.csv", row.names=F)
+# # store unique fish final lake-id combinations
+# write.csv(unique_fish_final, "./unique lake-id combinations/unique_fish_final.csv", row.names = F)
+# write.csv(unique_loons_final, "./unique lake-id combinations/unique_loons_final.csv", row.names = F)
 
 #join loonblood data to results
-results=sqldf("SELECT * FROM results AS a JOIN loonBlood AS b ON a.DOWID = b.LakeID AND a.FISHYEAR = b.UseYear")
+results=sqldf("SELECT * FROM results AS a JOIN loonBloodFinal AS b ON a.DOWID = b.LakeID AND a.FISHYEAR = b.UseYear")
 
-# Remove loonblood year column
-results = results[,-c(1)]
-results = results[,-c(3)]
-
-#compare lake names & id's
+##compare lake names & id's
 compare = sqldf("SELECT WATERWAY, DOWID, Lake, LakeID, COUNT(*) cnt FROM results GROUP BY WATERWAY, DOWID, Lake, LakeID")
+write.csv(compare, "./unique lake-id combinations/compare_final_lake_loon_join.csv", row.names=F)
 
-results <- data.table(results)
-results=cbind(results, HGppbLog = log(results$HGppm*1000 + 1))
+## Add the HGppbLog data column to the results
+# results=cbind(results, HGppbLog = log(results$HGppm*1000 + 1))
 
-# Check columns matching lake names
-# data.frame(sqldf("SELECT LakeID, WATERWAY, LakeFixed FROM results GROUP BY LakeID, WATERWAY, LakeFixed"))
-
-# Corrections
-# results[LakeID == "18009302", LakeID := "18009301"]
-# results[LakeID == "34015802", WATERWAY := 'Monongalia - Middle Fork Crow River']
-# results[LakeID == "34015802", LakeFixed := 'Monongalia - Middle Fork Crow River']
-# results[WATERWAY == "TAMARACK", LakeID := "000001"]
-
-# Use Year
-# results[LakeID == "000001", c("FISHYEAR", "Year", "UseYear")]
+# Fix loon lake id's
+results[results$Lake == "East Fox", "LakeID"] = "18029800"
+results[results$Lake == "South Tamarack", "LakeID"] = "3024101"
+results[ grep("tamarac", results$Lake, ignore.case=T), "LakeID"] = "3024102"
+results[ grep("george", results$Lake, ignore.case = T), "LakeID"] = "2009100"
+results[grep("clearwater", results$Lake, ignore.case=T), "LakeID"] = "18003800"
+results[ grep("East Fox", results$Lake), "LakeID"] = "18029800"
+results[grep("77008400", results$LakeID, ignore.case=T), "LakeID"] = "77008401" #big birch
+results[grep("29015100", results$LakeID, ignore.case = T), "LakeID"] = "29015104" #mantrap
+results[grep("69037800", results$LakeID, ignore.case = T), "LakeID"] = "69037801" #east vermilion
+results[grep("Monongalia - main", results$Lake, ignore.case = T), "LakeID"] = "34015801"
+results[grep("Monongalia.*crow", results$Lake, ignore.case = T), "LakeID"] = "34015802"
 
 # Write perch & loon joined data/results for loon analysis
-with(results, 
-     write.csv(data.frame(LakeID, WATERWAY, perchHG, FISHYEAR, Year, UseYear),
-               file = "./UseYear/perchLoonHGData.csv", row.names = FALSE))
+write.csv(results, "./UseYear/perchLoonHGData.csv", row.names = FALSE)
 
+# # Get mean perchHG by id-year combinations
+perchHGAvg = sqldf("SELECT LakeID, Year, AVG(perchHG) perchHG FROM results GROUP BY LakeID, Year")
 
-################################# run the analytics (Erickson's plots) /w Travis' edits
+# Write loonData
+write.csv(perchHGAvg, "./UseYear/perchHGAvg.csv", row.names = F)
+
+#####################################################################
 
 #************************* Log Length Inches vs residuals per species
-lgthResid <- ggplot(results, aes(x = LgthinLog, resids)) +
-  geom_point(alpha = 0.5) +
-  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
-  scale_color_manual(values = c("blue", "orange", "black")) +
-  stat_smooth(method = 'lm')
-ggsave('./plots/lgthResid.jpg', lgthResid, width = 14, height = 8.5)
-lgthResid
-
-# density plot
-lgthResidhist2d <- ggplot(results, aes(x = LgthinLog, resids)) +
-  geom_point(alpha = 0.25) +
-  stat_density2d() +
-  facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
-  scale_color_gradient(trans = "log")
-lgthResidhist2d
-ggsave('./plots/lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
-
-
-sppCutResid <- ggplot(results, aes(x = resids)) +
-  geom_histogram() +
-  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
-  scale_color_manual(values = c("blue", "orange", "black"))
-sppCutResid
-ggsave('./plots/sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
-
-loglengthHist <- ggplot(results, aes(x = LgthinLog)) +
-  geom_histogram() +
-  facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
-  scale_color_manual(values = c("blue", "orange", "black"))
-loglengthHist
-ggsave('./plots/loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
-
-## Plot residules by event
-sampleEventPlot <- results[ YEAR > 2000, length(resids),
-                             by = list(sampleEvent)][ V1 > 30, sampleEvent]
-
-eventResid <- ggplot(results[ sampleEvent %in% sampleEventPlot, ], aes(x = resids)) +
-  geom_histogram() +
-  facet_wrap( ~ sampleEvent, ncol = 7, scales = 'free') +
-  scale_color_manual(values = c("blue", "orange", "black"))
-eventResid
-ggsave('./plots/eventResid.jpg', eventResid, width = 14, height = 8.5)
-
-ypByAnat <- ggplot(results[ results$Spec == "YP", ],
-                   aes(x = LgthinLog, resids, color = Anat, size = Nofish)) +
-  geom_point(alpha = 0.5) +
-  scale_color_manual(values = c("blue", "orange", "black"))
-ypByAnat
-ggsave('./plots/ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
-
-
-## Plot residules by event
-sampleEventPlot <-
-  results[ , length(resids),
-            by = list(sampleEvent, Spec, SppSampleEvent)][ V1 >  30, SppSampleEvent ]
-sampleEventPlot
-
-lgthSampleEvent <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
-                          aes(x = LgthinLog,
-                              y = resids, color = Anat)) +
-  geom_point(alpha = 0.5)  +
-  facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
-  scale_color_manual(values = c("blue", "orange", "black"))
-
-lgthSampleEvent
-ggsave('./plots/lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
-
-
-results
-
-str(modelOut)
-
-lgthSampleEvent2 <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
-                           aes(x = LgthinLog,
-                               y = Predicted, color = Anat)) +
-  geom_point(alpha = 0.5)  +
-  facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
-  scale_color_manual(values = c("blue", "orange", "black")) +
-  stat_smooth(method = 'lm')
-## coord_cartesian(xlim = c(0, 3.5))
-lgthSampleEvent2
-ggsave('./plots/lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
-
-write.csv(results, "./UseYear/LoonData.csv")
-
-#******************** Ploting loon Log Hh ppb against predicted fish Log Hg ppb with linear model
-predictedPlot <- ggplot(data = results, aes(x = HGppbLog, Predicted)) +
-  geom_point() + stat_smooth(method = 'lm')
-predictedPlot
-
-ggsave("./plots/predictedPlot.pdf", predictedPlot)
-
-
-predictedPlotYPwhorg <- ggplot(data = results[ grep("YP_WHORG", SppCut),],
-                               aes(x = HGppbLog, y = Predicted)) +
-  geom_point() + stat_smooth(method = 'lm')
-predictedPlotYPwhorg
-ggsave("./plots/predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
-results[ grep("YP_WHORG", SppCut),]
+# lgthResid <- ggplot(results, aes(x = LgthinLog, resids)) +
+#   geom_point(alpha = 0.5) +
+#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+#   scale_color_manual(values = c("blue", "orange", "black")) +
+#   stat_smooth(method = 'lm')
+# ggsave('./plots/lgthResid.jpg', lgthResid, width = 14, height = 8.5)
+# lgthResid
+# 
+# # density plot
+# lgthResidhist2d <- ggplot(results, aes(x = LgthinLog, resids)) +
+#   geom_point(alpha = 0.25) +
+#   stat_density2d() +
+#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free')  +
+#   scale_color_gradient(trans = "log")
+# lgthResidhist2d
+# ggsave('./plots/lgthResidhist2d.jpg', lgthResidhist2d, width = 14, height = 8.5)
+# 
+# 
+# sppCutResid <- ggplot(results, aes(x = resids)) +
+#   geom_histogram() +
+#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+#   scale_color_manual(values = c("blue", "orange", "black"))
+# sppCutResid
+# ggsave('./plots/sppCutResid.jpg', sppCutResid, width = 14, height = 8.5)
+# 
+# loglengthHist <- ggplot(results, aes(x = LgthinLog)) +
+#   geom_histogram() +
+#   facet_wrap( ~ SppCut, ncol = 7, scales = 'free') +
+#   scale_color_manual(values = c("blue", "orange", "black"))
+# loglengthHist
+# ggsave('./plots/loglengthHist.jpg', loglengthHist, width = 14, height = 8.5)
+# 
+# ## Plot residules by event
+# sampleEventPlot <- results[ YEAR > 2000, length(resids),
+#                              by = list(sampleEvent)][ V1 > 30, sampleEvent]
+# 
+# eventResid <- ggplot(results[ sampleEvent %in% sampleEventPlot, ], aes(x = resids)) +
+#   geom_histogram() +
+#   facet_wrap( ~ sampleEvent, ncol = 7, scales = 'free') +
+#   scale_color_manual(values = c("blue", "orange", "black"))
+# eventResid
+# ggsave('./plots/eventResid.jpg', eventResid, width = 14, height = 8.5)
+# 
+# ypByAnat <- ggplot(results[ results$Spec == "YP", ],
+#                    aes(x = LgthinLog, resids, color = Anat, size = Nofish)) +
+#   geom_point(alpha = 0.5) +
+#   scale_color_manual(values = c("blue", "orange", "black"))
+# ypByAnat
+# ggsave('./plots/ypByAnat.jpg', ypByAnat , width = 14, height = 8.5)
+# 
+# 
+# ## Plot residules by event
+# sampleEventPlot <-
+#   results[ , length(resids),
+#             by = list(sampleEvent, Spec, SppSampleEvent)][ V1 >  30, SppSampleEvent ]
+# sampleEventPlot
+# 
+# lgthSampleEvent <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
+#                           aes(x = LgthinLog,
+#                               y = resids, color = Anat)) +
+#   geom_point(alpha = 0.5)  +
+#   facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
+#   scale_color_manual(values = c("blue", "orange", "black"))
+# 
+# lgthSampleEvent
+# ggsave('./plots/lgthSampleEvent.jpg', lgthSampleEvent, width = 14, height = 8.5)
+# 
+# 
+# results
+# 
+# str(modelOut)
+# 
+# lgthSampleEvent2 <- ggplot(results[ SppSampleEvent %in% sampleEventPlot, ],
+#                            aes(x = LgthinLog,
+#                                y = Predicted, color = Anat)) +
+#   geom_point(alpha = 0.5)  +
+#   facet_wrap( ~ SppSampleEvent, ncol = 7, scales = 'free') +
+#   scale_color_manual(values = c("blue", "orange", "black")) +
+#   stat_smooth(method = 'lm')
+# ## coord_cartesian(xlim = c(0, 3.5))
+# lgthSampleEvent2
+# ggsave('./plots/lgthSampleEvent2.jpg', lgthSampleEvent2, width = 14, height = 8.5)
+# 
+# write.csv(results, "./UseYear/LoonData.csv")
+# 
+# #******************** Ploting loon Log Hh ppb against predicted fish Log Hg ppb with linear model
+# predictedPlot <- ggplot(data = results, aes(x = HGppbLog, Predicted)) +
+#   geom_point() + stat_smooth(method = 'lm')
+# predictedPlot
+# 
+# ggsave("./plots/predictedPlot.pdf", predictedPlot)
+# 
+# 
+# predictedPlotYPwhorg <- ggplot(data = results[ grep("YP_WHORG", SppCut),],
+#                                aes(x = HGppbLog, y = Predicted)) +
+#   geom_point() + stat_smooth(method = 'lm')
+# predictedPlotYPwhorg
+# ggsave("./plots/predictedPlotYPwhorg.pdf", predictedPlotYPwhorg)
+# results[ grep("YP_WHORG", SppCut),]
 
