@@ -23,9 +23,7 @@ dHg <- d[ , list(perchHG, lakeYearID, Year, Lake, SECCHI, PH,
 dHg = d
 dHg[ , Mass := as.numeric(Mass)]
 dHg[ , HgLog := log(Mercury)]
-dHg
 dHg[ , Date := as.POSIXct(strptime(Date, format = "%Y-%m-%d"))]
-dHg[ , Date]
 dHg[ , Month := month(Date)]
 dHg[ , Day := day(Date)]
 
@@ -44,8 +42,8 @@ perchBySex <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
         facet_grid( . ~ Sex) +
             theme_bw() +
-                ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
-                    xlab(expression("ln(Standardized perch Hg(" * mu*"g/g wet weight) + 1)")) +
+                ylab(expression("ln(Loon blood Hg(ng/g wet weight))")) +
+                    xlab(expression("ln(Standardized perch Hg(ng/g wet weight) + 1)")) +
                         theme(strip.background = element_blank())
 perchBySex
 ggsave("./plots/perchBySex.pdf", perchBySex, width = 8, height = 4)
@@ -53,8 +51,8 @@ ggsave("./plots/perchBySex.pdf", perchBySex, width = 8, height = 4)
 onlyHG <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
             theme_bw() +
-                ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
-                    xlab(expression("ln(Standardized perch Hg (" * mu*"g/g wet weight) + 1)")) +
+                ylab(expression("ln(Loon blood Hg(ng/g wet weight))")) +
+                    xlab(expression("ln(Standardized perch Hg (ng/g wet weight) + 1)")) +
                         theme(strip.background = element_blank())
 onlyHG
 ggsave("./plots/onlyHG.pdf", onlyHG, width = 6, height = 4)
@@ -63,7 +61,7 @@ hgMass <- ggplot(data = dHG2, aes(x = Mass, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
         facet_grid( . ~ Age) +
             theme_bw() +
-                ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
+                ylab(expression("ln(Loon blood Hg(ng/g wet weight))")) +
                     xlab(expression("Mass (kg)")) +
                         theme(strip.background = element_blank())
 hgMass
@@ -71,7 +69,7 @@ ggsave("./plots/hgMass.pdf", hgMass, width = 8, height = 4)
 
 
 sexPlot <- ggplot(data = dHG2, aes(x = Sex, y = HgLog)) +
-    ylab(expression("ln(Loon blood Hg(" * mu*"g/g wet weight))")) +
+    ylab(expression("ln(Loon blood Hg(ng/g wet weight))")) +
         xlab("Loon sex/age category") +
     geom_boxplot() + theme_bw()
 sexPlot
@@ -81,59 +79,66 @@ ggplot(data = dHG2, aes(x = Month, y = HgLog, color = Sex)) +
     geom_point() +
         scale_color_manual(values = c('blue', 'red', 'black'))
 
+ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Sex)) +
+  geom_point() +
+  scale_color_manual(values = c('blue', 'red', 'black'))
+
 # write.csv(file = "./FinalData/LoonDataFinalUsed.csv", x = dHG2, row.names = FALSE)
 
 # Analysis
-dHG2 = copy(d)
+# dHG2 = copy(d)
 
-dHG2[ , Mass := as.numeric(Mass)]
-dHG2[ , HgLog := log(Mercury)]
-dHG2[ , Date := as.POSIXct(strptime(Date, format = "%Y-%m-%d"))]
-dHG2[ , Month := month(Date)]
-dHG2[ , Day := day(Date)]
+outA <- lm(HgLog ~ perchHG + Sex + Mass:Sex, data = dHG2)
+outB <- lm(HgLog ~ perchHG + Sex + Mass:Age, data = dHG2)
+outC <- lm(HgLog ~ perchHG + Age + Mass:Sex, data = dHG2)
+outD <- lm(HgLog ~ perchHG + Age + Mass:Age, data = dHG2)
 
-out <- lm(HgLog ~ perchHG + Sex + Mass:Age, data = dHG2)
-summary(out)
-# Call:
-#   lm(formula = HgLog ~ perchHG + Sex + Mass:Age, data = dHG2)
-# 
-# Residuals:
-#   Min       1Q   Median       3Q      Max 
-# -2.31757 -0.35391 -0.02413  0.32079  2.46583 
-# 
-# Coefficients:
-#   Estimate Std. Error t value Pr(>|t|)    
-# (Intercept)        0.2000     0.9922   0.202   0.8406    
-# perchHG            0.5683     0.1259   4.514 1.67e-05 ***
-#   SexMale           -0.5918     0.2329  -2.542   0.0125 *  
-#   SexUnknown        -0.5108     0.6091  -0.839   0.4036    
-# Mass:AgeAdult      0.9519     0.1881   5.059 1.80e-06 ***
-#   Mass:AgeJuvenile   0.7992     0.1389   5.753 8.74e-08 ***
-#   ---
-#   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-# 
-# Residual standard error: 0.6203 on 105 degrees of freedom
-# (14 observations deleted due to missingness)
-# Multiple R-squared:  0.7667,	Adjusted R-squared:  0.7556 
-# F-statistic: 69.02 on 5 and 105 DF,  p-value: < 2.2e-16
+summary(outA)
+summary(outB)
+summary(outC)
+summary(outD)
 
-confint(out, level = 0.95)
-# 2.5 %     97.5 %
-#   (Intercept)      -1.7674041  2.1674267
-# perchHG           0.3186288  0.8178883
-# SexMale          -1.0535313 -0.1301160
-# SexUnknown       -1.7185732  0.6969184
-# Mass:AgeAdult     0.5788388  1.3249546
-# Mass:AgeJuvenile  0.5237317  1.0746427
-# confint(out, level = 0.95)
+AIC(outA)
+AIC(outB)
+AIC(outC)
+AIC(outD)
 
-par(mfcol = c(2,2))
-plot(out)
+confint(outA, level = 0.95)
+confint(outB, level = 0.95)
+confint(outC, level = 0.95)
+confint(outD, level = 0.95)
 
 pdf("./plots/LoonHGresid.pdf")
 par(mfcol = c(2,2))
-plot(out)
+plot(outA)
+plot(outB)
+plot(outC)
+plot(outD)
 dev.off()
+
+
+# ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Age)) + 
+#   geom_point() + stat_smooth(method = 'lm')
+# 
+# ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Sex)) + 
+#   geom_point() + stat_smooth(method = 'lm')
+# 
+# ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Sex,
+#                         size = perchHG)) + 
+#   geom_point() + stat_smooth(method = 'lm') +
+#   scale_radius(trans = 'sqrt')
+# 
+# ggplot(data = dHG2, aes(x = perchHG, y = HgLog,color = Sex)) + 
+#   geom_point() + stat_smooth(method = 'lm')
+
+# dHG2[ , .(mean(Mass)), by = .(Sex)]
+# 
+# dHG2[ , .(mean(HgLog)), by = .(Sex)]
+# dHG2[ , .(mean(HgLog)), by = .(Age)]
+# dHG2[ , .(mean(HgLog)), by = .(Sex, Age)]
+
+
+confint(outA, level = 0.95)
 
 
 #########################
@@ -149,26 +154,20 @@ Lake <- dHG2[ , list(
     CHLALake = mean(CHLA),
     MAXdepthLake = mean(MAXdepth),
     AreaLake = mean(AREA)
-    ), by = Lake]
+    ), by = LakeID]
 
-Lake[ order(perchHGLake, decreasing = TRUE), list(Lake, perchHGLake, MAXdepthLake)]
-ggpairs(Lake[ , -1, with = FALSE])
+# Lake[ order(perchHGLake, decreasing = TRUE), list(Lake, perchHGLake, MAXdepthLake)]
+
+# plot correlations
+ggpairsplot = ggpairs(Lake[ , -1, with = FALSE])
+ggsave("./plots/Hgpairs.pdf", ggpairsplot, width = 8, height = 8)
+
 corr.test(Lake[ , -1, with = FALSE])
 
 plot(Lake$PHLake, Lake$perchHGLake)
 
 # lake ph correlation with perch Hg
 cor.test(Lake$PHLake, Lake$perchHGLake)
-# Pearson's product-moment correlation
-# 
-# data:  Lake$PHLake and Lake$perchHGLake
-# t = -2.0199, df = 31, p-value = 0.05211
-# alternative hypothesis: true correlation is not equal to 0
-# 95 percent confidence interval:
-#  -0.612617517  0.002576956
-# sample estimates:
-#        cor 
-# -0.3410338
 
 summary(lm(perchHGLake ~ PHLake + ALKLake +
                SECCHILake + MAXdepthLake + PhospLake + AreaLake,
@@ -194,9 +193,8 @@ HgSeBoxplot <- ggplot(dHg, aes(x = Sex, y = Selenium)) + geom_boxplot() +
 print(HgSeBoxplot)
 ggsave("./plots/HgSeBoxplot.pdf", HgSeBoxplot, width = 6, height = 4)
 
-ggplot(dHg, aes(y = SeLog, x = HgLog)) +
-    geom_point() + stat_smooth(method = 'lm') +
-        facet_grid( . ~ Sex)
+
+
 
 ### Start of Se analysis
 dSe <- dHg[ SeLog != -Inf,]
@@ -208,11 +206,30 @@ round(confint(lm(SeLog ~ Sex  + Mass, data = dSe)), 2)
 dSe[ , Sex := factor(Sex)]
 levels(dSe$Sex)[3] <- "Juvenile"
 sexPlotSe <- ggplot(data = dSe, aes(x = Sex, y = SeLog)) +
-    ylab(expression("ln(Loon blood Se (" * mu*"g/g wet weight))")) +
+    ylab(expression("ln(Loon blood Se ("*mu*"g/g wet weight))")) +
         xlab("Loon sex/age category") + 
     geom_boxplot() + theme_bw()
 sexPlotSe
 ggsave("./plots/sexPlotSe.pdf", sexPlotSe, width = 6, height = 4)
+
+#
+sexPlotSe <- ggplot(data = dSe, aes(x = Sex, y = SeLog)) +
+  ylab(expression("ln(Loon blood Se ("*mu*"g/g wet weight))")) +
+  xlab("Loon sex/age category") + 
+  geom_boxplot() + theme_bw()
+sexPlotSe
+ggsave("./plots/sexPlotSe.pdf", sexPlotSe, width = 6, height = 4)
+expression("ln(Loon blood Se ("*mu*"g/g wet weight))")
+
+# SE vs Hg with unkown sex
+sexPlotSeVsHg <- ggplot(data = dSe, aes(x = HgLog, y = SeLog)) +
+  ylab(expression("ln(Loon blood Se (ng/g wet weight))")) +
+  xlab(expression("ln(Loon blood Hg (ng/g wet weight))")) + 
+  geom_point() + stat_smooth(method = 'lm') +
+  facet_grid( . ~ Sex) +
+  theme_bw()
+ggsave("./plots/sexPlotSeVsHgUnkown.pdf", sexPlotSeVsHg, width = 6, height = 4)
+
 
 cor(dSe$SeLog, dSe$HgLog)
 cor.test(dSe$SeLog, dSe$HgLog)

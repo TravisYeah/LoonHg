@@ -78,9 +78,3 @@ fishDataUse4[ grep("AUTO", WATERWAY, ignore.case=F) , WATERWAY:= "Arrowhead [Aut
 ## Currently using all years of data
 write.csv(file = "./inputData/fishUse.csv", fishDataUse4)
 
-unique(fishDataUse4$WATERWAY)[which(unique(toupper(fishDataUse4$WATERWAY)) %in% unique(toupper(dtWide$Lake)))]
-
-
-#####
-## loonData <- fread("./inputdata/MNLoonMercury.csv")
-## head(loonData)

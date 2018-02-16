@@ -38,6 +38,8 @@ dtUse[ c(223:240, 493:516), Lake := paste(Lake, "Fox")]
 dtUse[ , Lake]
 dtUse[ , unique(Lake)]
 
+# Remove sample error (unknown adult)
+dtUse <- dtUse[-grep("1138-06641", dtUse$Band),]
 
 ## CLEAN UP Lake data and names
 lakeKey <- fread("./RawData/lakeSubs.csv")

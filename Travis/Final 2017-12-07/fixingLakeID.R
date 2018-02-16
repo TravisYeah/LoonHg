@@ -183,7 +183,6 @@ st <- system.time(
 modelOut
 # save the model
 save(modelOut, file = "fishHGmodelHgPpb.rda")
-save(modelOut, file = "fishHGmodelHgPpbTest.rda")
 
 #### OR ####
 

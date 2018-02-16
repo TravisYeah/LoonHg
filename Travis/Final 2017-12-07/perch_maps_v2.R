@@ -99,9 +99,7 @@ print(heatmap_fishz6b12)
 dev.off()
 
 #unique lat long
-lakeHG
 data = sqldf("SELECT COUNT(perchHG) perchHG, latitude, longitude FROM lakeHG GROUP BY latitude, longitude")
-sqldf("SELECT * FROM data WHERE perchHG > 2")
 
 # plotting perch hg with interpolated lat/long points
 ggmap(minnesota) + 
@@ -120,29 +118,57 @@ ggmap(minnesota) +
         legend.text = element_text(size = 10)) +
   coord_map()
 
-  
-png(filename="./Maps/density1.png", width=1280, height=1280)
-print(density1)
-dev.off()
-
-#Trying interpolation
+# load spatial libraries
 library(sp)
 library(raster)
-#minnesota shapefile
+library(gstat)
+
+################ ordinary kriging model
+z<-lakeHG$perchHG
+x <- lakeHG[,"longitude"]
+y <- lakeHG[,"latitude"]
+d <- data.frame(z,x,y)
+idm <- gstat(formula=z~1, locations=~x+y, data=d)
 us<-getData('GADM', country='USA', level=2)
 minnesota=subset(us, NAME_1=="Minnesota")
-plot(minnesota)
+r <- raster(minnesota, resolution=1/50)
+g <- as(r, 'SpatialGrid')
+idp <- interpolate(r, idm)
+idp <- mask(idp, minnesota)
+plot(idp)
 
-sp = SpatialPoints(lakeHG[,c("longitude", "latitude")], 
-                    proj4string = CRS("+proj=longlat +datum=WGS84"))
-sp = SpatialPointsDataFrame(sp, lakeHG)
-# cuts = seq(min(lakeHG$perchHG), max(lakeHG$perchHG), length.out=6)
-projection(cn) <- "+proj=longlat +datum=WGS84"
-# the CRS we want
-laea <- CRS("+proj=laea  +lat_0=0 +lon_0=-80")
-clb <- spTransform(cn, laea)
-pts <- spTransform(sp, laea)
-plot(clb, axes=TRUE)
-points(pts, col='red', cex=.5)
+################## minimizing the kriging model
+locations = SpatialPointsDataFrame(coords = lakeHG[,c("longitude", "latitude")],
+                                   data = lakeHG,
+                                   proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+RMSE <- function(observed, predicted) {
+  sqrt(mean((predicted - observed)^2, na.rm=TRUE))
+}
 
-######################################################################
+f1 <- function(x, test, train) {
+  nmx <- x[1]
+  idptemp <- x[2]
+  if (nmx < 1) return(Inf)
+  if (idptemp < .001) return(Inf)
+  m <- gstat(formula=perchHG~1, locations=train, nmax=nmx, set=list(idp=idptemp))
+  p <- predict(m, newdata=test, debug.level=0)$var1.pred
+  RMSE(test$perchHG, p)
+}
+
+set.seed(20180209)
+i <- sample(nrow(locations), 0.2 * nrow(locations))
+tst <- locations[i,]
+trn <- locations[-i,]
+opt <- optim(c(8, .5), f1, test=tst, train=trn)
+
+m <- gstat(formula=z~1, locations=~x+y, data=d, nmax=opt$par[1], set=list(idp=opt$par[2]))
+idw <- interpolate(r, m)
+idw <- mask(idw, minnesota)
+png("./maps/Kriging.png", height = 720, width = 720)
+plot(idw, col=colorRampPalette(c("yellow", "darkblue"))(255))
+dev.off()
+
+m <- gstat(formula=z~1, locations=~x+y, data=d, nmax=25, set=list(idp=opt$par[2]))
+idw <- interpolate(r, m)
+idw <- mask(idw, minnesota)
+plot(idw, col=colorRampPalette(c("yellow", "darkblue"))(255))
