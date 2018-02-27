@@ -347,7 +347,7 @@ setkey(dWQ5, 'LakeID')
 dtThree <- copy(dWQ5[dtWide])
 
 # Write water quality data
-write.csv(x = dWQ5, file = "WaterQualityCheck27July17.csv", row.names = FALSE)
+write.csv(x = dWQ5, file = "WaterQualityCheck27July17_2018_02_27.csv", row.names = FALSE)
 
 
 ###################
@@ -372,5 +372,5 @@ dtFour <- perchHG[dtThree]
 # check NAs
 nrow(dtFour[!is.na(perchHG),])
 
-write.csv(file = "./UseYear/LoonData.csv",
+write.csv(file = "./UseYear/LoonData2018_02_27.csv",
           x = dtFour, row.names = FALSE)
