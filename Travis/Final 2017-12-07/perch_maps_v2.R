@@ -28,8 +28,11 @@ join = sqldf("SELECT a.WATERWAY, b.perchHG, a.latitude, a.longitude FROM perchHG
              ON a.WATERWAY = b.WATERWAY
              ")
 lakeHG = sqldf("SELECT WATERWAY, AVG(perchHG) perchHG, latitude, longitude FROM 'join' GROUP BY WATERWAY, latitude, longitude")
-lakeHG=lakeHG[!is.na(lakeHG$WATERWAY),]
+lakeHG = sqldf("SELECT WATERWAY, perchHG, EXP(perchHG) perchHGBT, latitude, longitude FROM lakeHG")
+lakeHG = lakeHG[!is.na(lakeHG$WATERWAY),]
 lakeHG = lakeHG[!is.na(lakeHG$longitude) & !is.na(lakeHG$latitude), ]
+
+write.csv(lakeHG, "./coords/coordsData.csv", row.names=F)
 
 # get mn map
 minnesota <- get_map("minnesota", zoom = 7)
@@ -55,14 +58,8 @@ print(heat_z6)
 dev.off()
 
 # plain plot of perch hg points 
-LogHgPpb=lakeHG$perchHG
 point_map_plain = ggmap(minnesota) +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=LogHgPpb))
-# + stat_density2d(data=test, aes(x=lon, y=lat, fill=..level.., alpha=..level..),
-# geom="polygon", size=1, bins=8) +
- # + scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG)))
-# scale_fill_gradient(low="red", high="green")
-# scale_alpha(range = c(0,0.6), guide=FALSE)
 png(filename="./Maps/point_map_plain_z7.png", width=700, height=700)
 print(point_map_plain)
 dev.off()
@@ -74,6 +71,16 @@ point_map_plain = ggmap(minnesota_z6) +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=LogHgPpb)) + 
   scale_fill_continuous(low="blue", high="black", limits=c(min(LogHgPpb), max(LogHgPpb)))
 png(filename="./Maps/point_map_plain_z6.png", width=700, height=700)
+print(point_map_plain)
+dev.off()
+
+# plain plot of BT perch hg points zoom 6
+minnesota_z6 = get_map("minnesota", zoom = 6)
+HgPpb=lakeHG$perchHGBT
+point_map_plain = ggmap(minnesota_z6) +
+  geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=HgPpb)) + 
+  scale_colour_gradient(low="yellow", high="blue", limits=c(min(HgPpb), max(HgPpb)))
+png(filename="./Maps/point_map_plain_BT20180223.png", width=700, height=700)
 print(point_map_plain)
 dev.off()
 
