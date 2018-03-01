@@ -3,7 +3,7 @@
 setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 # load data
-perchHG=read.csv("./UseYear/perchHGPredictData.csv")
+perchHG=read.csv("./UseYear/perchHGPredictData2018_02_27.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
 
@@ -32,7 +32,7 @@ lakeHG = sqldf("SELECT WATERWAY, perchHG, EXP(perchHG) perchHGBT, latitude, long
 lakeHG = lakeHG[!is.na(lakeHG$WATERWAY),]
 lakeHG = lakeHG[!is.na(lakeHG$longitude) & !is.na(lakeHG$latitude), ]
 
-write.csv(lakeHG, "./coords/coordsData.csv", row.names=F)
+write.csv(lakeHG, "./coords/coordsData2018_02_27.csv", row.names=F)
 
 # get mn map
 minnesota <- get_map("minnesota", zoom = 7)
@@ -43,7 +43,7 @@ heat_z7 = ggmap(minnesota) + stat_density2d(data=lakeHG, aes(x=longitude, y=lati
   scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG$perchHG))) +
   # scale_fill_gradient(low="red", high="green")
   scale_alpha(range = c(0,0.6), guide=FALSE)
-png(filename="./Maps/heat_z7b8.png", width=1280, height=1280)
+png(filename="./Maps/heat_z7b8_2018_02_27.png", width=1280, height=1280)
 print(heat_z7)
 dev.off()
 
@@ -53,14 +53,14 @@ heat_z6 = ggmap(minnesota) + stat_density2d(data=lakeHG, aes(x=longitude, y=lati
   scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG$perchHG))) +
   # scale_fill_gradient(low="red", high="green")
   # scale_alpha(range = c(0,0.6), guide=FALSE)
-png(filename="./Maps/heat_z7b12.png", width=1280, height=1280)
+png(filename="./Maps/heat_z7b12_2018_02_27.png", width=1280, height=1280)
 print(heat_z6)
 dev.off()
 
 # plain plot of perch hg points 
 point_map_plain = ggmap(minnesota) +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=LogHgPpb))
-png(filename="./Maps/point_map_plain_z7.png", width=700, height=700)
+png(filename="./Maps/point_map_plain_z7_2018_02_27.png", width=700, height=700)
 print(point_map_plain)
 dev.off()
 
@@ -70,7 +70,7 @@ minnesota_z6 = get_map("minnesota", zoom = 6)
 point_map_plain = ggmap(minnesota_z6) +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=LogHgPpb)) + 
   scale_fill_continuous(low="blue", high="black", limits=c(min(LogHgPpb), max(LogHgPpb)))
-png(filename="./Maps/point_map_plain_z6.png", width=700, height=700)
+png(filename="./Maps/point_map_plain_z6_2018_02_27.png", width=700, height=700)
 print(point_map_plain)
 dev.off()
 
@@ -80,7 +80,7 @@ HgPpb=lakeHG$perchHGBT
 point_map_plain = ggmap(minnesota_z6) +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=HgPpb)) + 
   scale_colour_gradient(low="yellow", high="blue", limits=c(min(HgPpb), max(HgPpb)))
-png(filename="./Maps/point_map_plain_BT20180223.png", width=700, height=700)
+png(filename="./Maps/point_map_plain_BT_2018_02_27.png", width=700, height=700)
 print(point_map_plain)
 dev.off()
 
@@ -91,7 +91,7 @@ heatmap_fishz6b8 = ggmap(minnesota) + stat_density2d(data=lakeHG, aes(x=longitud
   # scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG$perchHG))) +
   scale_fill_gradient(low="red", high="green") + 
   scale_alpha(range = c(0,0.7), guide=FALSE)
-png(filename="./Maps/heat_z6b8.png", width=1280, height=1280)
+png(filename="./Maps/heat_z6b8_2018_02_27.png", width=1280, height=1280)
 print(heatmap_fishz6b8)
 dev.off()
 
@@ -101,7 +101,7 @@ heatmap_fishz6b12 = ggmap(minnesota) + stat_density2d(data=lakeHG, aes(x=longitu
   scale_fill_continuous(low="blue", high="black", limits=c(min(lakeHG$perchHG), max(lakeHG$perchHG))) +
   # scale_fill_gradient(low="red", high="green")
   scale_alpha(range = c(0,0.7), guide=FALSE)
-png(filename="./Maps/heat_z6b12.png", width=1280, height=1280)
+png(filename="./Maps/heat_z6b12_2018_02_27.png", width=1280, height=1280)
 print(heatmap_fishz6b12)
 dev.off()
 
@@ -171,7 +171,7 @@ opt <- optim(c(8, .5), f1, test=tst, train=trn)
 m <- gstat(formula=z~1, locations=~x+y, data=d, nmax=opt$par[1], set=list(idp=opt$par[2]))
 idw <- interpolate(r, m)
 idw <- mask(idw, minnesota)
-png("./maps/Kriging.png", height = 720, width = 720)
+png("./maps/Kriging_2018_02_27.png", height = 720, width = 720)
 plot(idw, col=colorRampPalette(c("yellow", "darkblue"))(255))
 dev.off()
 

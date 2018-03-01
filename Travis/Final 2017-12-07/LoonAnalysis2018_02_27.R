@@ -13,7 +13,7 @@ setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 ## Load data
 
-d <- fread("./UseYear/LoonData2018_02_27.csv")
+d <- fread("./UseYear/2018_02_27/LoonData2018_02_27.csv")
 
 # grab only the columns needed to analyze the data
 # And then reformat the data

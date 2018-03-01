@@ -160,6 +160,8 @@ fishData[ , length(HGppm), by = sampleEvent][ order(V1, decreasing = FALSE),][ V
 fishData[ , Censor := FALSE]
 fishData[ NDyes == 1, Censor := TRUE]
 
+
+
 ########################################
 ########################################
 ####### RUN THE MODEL OR LOAD IT #######
@@ -180,7 +182,7 @@ st <- system.time(
               LengthInchesLog : SppCut  +
               SampleEvent - 1, dist = 'gaussian')
 )
-modelOut
+
 # save the model
 save(modelOut, file = "fishHGmodelHgPpb.rda")
 
@@ -190,6 +192,42 @@ save(modelOut, file = "fishHGmodelHgPpb.rda")
 load("fishHGmodelHgPpb.rda")
 
 ############
+
+# Get coefficients from the model
+coefEst = coef(modelOut)
+
+#load library for parallel computing
+library(snow)
+
+#create clusters
+cl <- makeSOCKcluster(5)
+
+#Add data to clusters
+clusterExport(cl, "fishData")
+clusterExport(cl, "coefEst")
+
+#calculate predicted Hg for a 12 cm perch each lake
+cluster_results = parSapply(cl, 1:nrow(fishData), function(i) {
+  lakeyear <- paste(fishData$DOWID[i], fishData$YEAR[i], sep="_")
+  lakeCoef <- coefEst[grep(paste0("SampleEvent",lakeyear), names(coefEst), perl=T)]
+  if(length(lakeCoef) != 0) {
+    return(as.numeric(lakeCoef) + as.numeric(coefEst[grep("YP_WHORG", names(coefEst))]*log(4.7 + 1)))
+  } else {
+    return(NA)
+  }
+})
+
+# Stop the clusters
+stopCluster(cl)
+
+#bind predictions with data
+all_results = cbind(fishData, perchHG = cluster_results)
+
+#remove NAs
+all_results = all_results[-which(is.na(all_results$perchHG)), ]
+
+#write results to file
+write.csv(all_results, "./UseYear/perchHGPredictData2018_02_27.csv", row.names = F)
 
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
 loonBlood[, UseYear := 0]
