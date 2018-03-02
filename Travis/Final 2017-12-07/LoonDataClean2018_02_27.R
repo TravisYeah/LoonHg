@@ -357,7 +357,7 @@ write.csv(x = dWQ5, file = "WaterQualityCheck27July17_2018_02_27.csv", row.names
 ###################
 ###################
 
-perchHG <- fread("./UseYear/perchHGAvg.csv")
+perchHG <- fread("./UseYear/2018_02_27/perchHGAvg2018_02_27.csv")
 
 # Create lakeYearID for perch/water data
 perchHG[ , lakeYearID := paste(LakeID, Year, sep = "_")]
@@ -373,5 +373,5 @@ dtFour <- perchHG[dtThree]
 # check NAs
 nrow(dtFour[!is.na(perchHG),])
 
-write.csv(file = "./UseYear/LoonData2018_02_27.csv",
+write.csv(file = "./UseYear/2018_02_27/LoonData2018_02_27.csv",
           x = dtFour, row.names = FALSE)
