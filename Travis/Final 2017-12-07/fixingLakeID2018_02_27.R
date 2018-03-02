@@ -14,15 +14,6 @@ loonBlood[ , LakeID := gsub( "^0", "", LakeID)]
 fishDataRaw <- fread("./inputData/fishUse.csv")
 fishData <- fread("./inputData/fishUse.csv")
 
-## Reformat data structure
-fishData[ , DOWID := as.character(DOWID)]
-fishData[ , HGppmLog  := log(HGppm + 1)]
-fishData[ , Lgthcm := Lgthin * 2.54]
-fishData[ , LgthinLog := log(Lgthin + 1)]
-fishData[ , LgthcmLog := log(Lgthcm + 1)]
-fishData[ , SppCut := paste(Spec, Anat, sep = "_")]
-fishData[ , sampleEvent := paste(DOWID, YEAR, sep = "_")]
-
 ####################### Edit lake codes
 
 # Pool tamarac data
@@ -72,6 +63,15 @@ loonBlood[grep("East Vermilion", Lake, ignore.case = T), LakeID := "69037800"]
 
 # monongalia
 loonBlood[grep("Monongalia", Lake, ignore.case = T), LakeID := "34015800"]
+
+## Reformat data structure
+fishData[ , DOWID := as.character(DOWID)]
+fishData[ , HGppmLog  := log(HGppm + 1)]
+fishData[ , Lgthcm := Lgthin * 2.54]
+fishData[ , LgthinLog := log(Lgthin + 1)]
+fishData[ , LgthcmLog := log(Lgthcm + 1)]
+fishData[ , SppCut := paste(Spec, Anat, sep = "_")]
+fishData[ , sampleEvent := paste(DOWID, YEAR, sep = "_")]
 
 ## Enter in non-detect codes 
 ndCodes <- c("K", "KM", "ND")
@@ -247,6 +247,7 @@ for(id in unique(loonBlood$LakeID)) {
 # Remove lakes with no match
 loonBlood = loonBlood[UseYear != 0, ]
 
+loonBlood[, perchHG := NULL]
 for(i in 1:nrow(loonBlood)) {
   lakeyear <- paste(loonBlood$LakeID[i], loonBlood$UseYear[i], sep="_")
   lakeCoef <- coefEst[grep(lakeyear, names(coefEst))]
