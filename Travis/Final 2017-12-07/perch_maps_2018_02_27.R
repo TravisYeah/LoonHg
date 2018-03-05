@@ -3,7 +3,7 @@
 setwd("D:/Projects/USGS_R/loons/Travis/Final 2017-12-07")
 
 # load data
-perchHG=read.csv("./UseYear/perchHGPredictData2018_02_27.csv")
+perchHG=read.csv("./UseYear/2018_02_27/perchHGPredictData2018_02_27.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
 
@@ -75,7 +75,6 @@ print(point_map_plain)
 dev.off()
 
 # plain plot of BT perch hg points zoom 6
-minnesota_z6 = get_map("minnesota", zoom = 6)
 HgPpb=lakeHG$perchHGBT
 point_map_plain = ggmap(minnesota_z6) +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, size=1, color=HgPpb)) + 

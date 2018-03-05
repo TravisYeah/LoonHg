@@ -223,11 +223,8 @@ stopCluster(cl)
 #bind predictions with data
 all_results = cbind(fishData, perchHG = cluster_results)
 
-#remove NAs
-all_results = all_results[-which(is.na(all_results$perchHG)), ]
-
 #write results to file
-write.csv(all_results, "./UseYear/perchHGPredictData2018_02_27.csv", row.names = F)
+write.csv(all_results, "./UseYear/2018_02_27/perchHGPredictData2018_02_27.csv", row.names = F)
 
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
 loonBlood[, UseYear := 0]

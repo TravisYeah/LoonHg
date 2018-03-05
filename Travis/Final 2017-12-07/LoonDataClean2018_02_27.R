@@ -323,8 +323,8 @@ dtWide[grep("Mantrap", Lake, ignore.case = T), LakeID := "29015100"]
 dtWide[grep("East Vermilion", Lake, ignore.case = T), LakeID := "69037800"]
 dtWide[grep("Monongalia", Lake, ignore.case = T), LakeID := "34015800"]
 dtWide[dtWide$Lake == "East Fox", "LakeID"] = "18029800"
-dtWide[dtWide$Lake == "South Tamarack", "LakeID"] = "3024101"
 dtWide[ grep("tamarac", dtWide$Lake, ignore.case=T), "LakeID"] = "3024102"
+dtWide[dtWide$Lake == "South Tamarack", "LakeID"] = "3024101"
 dtWide[ grep("george", dtWide$Lake, ignore.case = T), "LakeID"] = "2009100"
 dtWide[grep("clearwater", dtWide$Lake, ignore.case=T), "LakeID"] = "18003800"
 dtWide[ grep("East Fox", dtWide$Lake), "LakeID"] = "18029800"
