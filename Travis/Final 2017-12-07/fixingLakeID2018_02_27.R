@@ -284,7 +284,7 @@ results[grep("Monongalia.*crow", results$Lake, ignore.case = T), "LakeID"] = "34
 results <- results[, -c(1)]
 
 # Write perch & loon joined data/results for loon analysis
-write.csv(results, "./UseYear/perchLoonHGData2018_02_27.csv", row.names = FALSE)
+write.csv(results, "./UseYear/2018_02_27/perchLoonHGData2018_02_27.csv", row.names = FALSE)
 
 #remove NA
 results <- results[!is.na(results$perchHG), ]
@@ -293,4 +293,4 @@ results <- results[!is.na(results$perchHG), ]
 perchHGAvg = data.frame(sqldf("SELECT LakeID, Year, AVG(perchHG) perchHG FROM results GROUP BY LakeID, Year"))
 
 # Write loonData
-write.csv(perchHGAvg, "./UseYear/perchHGAvg2018_02_27.csv", row.names = F)
+write.csv(perchHGAvg, "./UseYear/2018_02_27/perchHGAvg2018_02_27.csv", row.names = F)
