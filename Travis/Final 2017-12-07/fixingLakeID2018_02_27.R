@@ -184,12 +184,12 @@ st <- system.time(
 )
 
 # save the model
-save(modelOut, file = "fishHGmodelHgPpb.rda")
+save(modelOut, file = "fishHGmodelHgPpb20180302.rda")
 
 #### OR ####
 
 # load the model
-load("fishHGmodelHgPpb.rda")
+load("fishHGmodelHgPpb20180302.rda")
 
 ############
 
