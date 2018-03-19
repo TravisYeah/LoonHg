@@ -203,8 +203,9 @@ dSe <- copy(dSe[ - dSe[ , which(Age == "Adult" & Sex == "Unknown")],])
 dSe
 
 # Se Log model
-summary(lm(SeLog ~ Sex  + Mass, data = dSe))
-round(confint(lm(SeLog ~ Sex  + Mass, data = dSe)), 2)
+SeLogModel <- lm(SeLog ~ Sex  + Mass:Age, data = dSe)
+summary(SeLogModel)
+round(confint(SeLogModel), 2)
 
 dSe[ , Sex := factor(Sex)]
 levels(dSe$Sex)[3] <- "Juvenile"
@@ -270,5 +271,6 @@ ggplot(data = dSe, aes(x = Mercury, y = HgToSe)) +
     geom_point() + stat_smooth(method = 'lm')
 
 # Hg to Se ration model
-summary(lm(HgToSe ~ Sex  + Age, data = dSe))
-round(confint(lm(HgToSe ~ Sex  + Mass, data = dSe)), 2)
+HtToSeModel <- lm(HgToSe ~ Sex  + Mass:Age, data = dSe)
+summary(HtToSeModel)
+round(confint(HtToSeModel), 2)
