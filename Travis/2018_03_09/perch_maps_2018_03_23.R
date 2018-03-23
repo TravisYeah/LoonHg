@@ -42,11 +42,11 @@ write.csv(lakeHG, "./coords/coordsData2018_03_09.csv", row.names=F)
 categorizeColor <- function(xs) {
   colors <- rep("NULL", length(xs))
   for(i in 1:length(xs)) {
-    if(xs[i] < .1) {
+    if(xs[i] < .093) {
       colors[i] <- "green"
-    } else if (xs[i] < .18) {
+    } else if (xs[i] < .167) {
       colors[i] <- "yellow"
-    } else if (xs[i] < .4) {
+    } else if (xs[i] < .372) {
       colors[i] <- "orange"
     } else {
       colors[i] <- "red"
@@ -61,36 +61,31 @@ lakeHG <- subset(lakeHG, !(lakeHG$WATERWAY %in% c("SAGANAGA","BOOT","WASHBURN","
                                                   "HARRIET", "SQUARE", "BEAR", "ST. LOUIS R.",
                                                   "ST. LOUIS BAY", "BONE", "GOLF COURSE POND")))
 
+#order data by perchHg
+lakeHG <- lakeHG[order(lakeHG$perchHG),]
+
 #convert map to raster
 states <- map_data("state")
 minnesota <- subset(states, region == "minnesota")
 
-# plain plot of perch hg points zoom 6.5
-LogHgPpb=log(exp(lakeHG$perchHG)/1000 + 1)
-`Perch Hg`=categorizeColor(LogHgPpb)
+# plain plot of perch hg points
+HgPpb <- (exp(lakeHG$perchHG)-1)/1000
+`Perch Hg` <- categorizeColor(HgPpb)
 point_map_plain = ggplot(data=minnesota, mapping = aes(x = long, y = lat)) +
   geom_polygon(color="black", fill="gray") +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, color=`Perch Hg`), size=1) +
-  scale_colour_manual(name="Perch Hg", values=c("green", "yellow", "orange", "red"),
-                      labels=c("< 0.1 ug/g", "0.1 to 0.18 ug/g", "0.18 to < 0.4 ug/g", "> 0.4 ug/g"),
-                      guide = "legend") +
+  scale_color_manual(name="Perch Hg", 
+                     values=c("green"="green", "yellow"="yellow", "orange"="orange", "red"="red"),
+                     breaks=c("green", "yellow", "orange", "red"),
+                     labels=c("< 0.093 ug/g", "0.093 to < 0.167 ug/g", "0.167 to < 0.372 ug/g", "> 0.372 ug/g")) +
   theme(legend.position = c(.825, .375), panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
         panel.background = element_blank()) + 
   guides(colour = guide_legend(override.aes = list(size=3))) +
-  xlab("longitude") +
-  ylab("latitude")
+  xlab("Longitude") +
+  ylab("Latitude")
 point_map_plain
-png(filename="./Maps/point_map_plain_z6_2018_03_09.png", width=700, height=700)
+pdf("./Maps/perch_Hg_map_2018_03_23.pdf", width=8.5, height=11)
 print(point_map_plain)
-dev.off()
-
-# plain plot of BT perch hg points zoom 6
-HgPpb=lakeHG$perchHGBT
-point_map_plain_BT = ggmap(minnesota) +
-  geom_point(data=lakeHG, aes(x=longitude, y=latitude, color=HgPpb)) + 
-  scale_colour_gradient(low="yellow", high="blue", limits=c(min(HgPpb), max(HgPpb)))
-png(filename="./Maps/point_map_plain_BT_2018_03_09.png", width=700, height=700)
-print(point_map_plain_BT)
 dev.off()
 
