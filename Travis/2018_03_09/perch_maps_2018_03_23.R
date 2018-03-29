@@ -67,12 +67,14 @@ lakeHG <- lakeHG[order(lakeHG$perchHG),]
 #convert map to raster
 states <- map_data("state")
 minnesota <- subset(states, region == "minnesota")
+counties <- subset(map_data("county"), region == "minnesota")
 
 # plain plot of perch hg points
 HgPpb <- (exp(lakeHG$perchHG)-1)/1000
 `Perch Hg` <- categorizeColor(HgPpb)
 point_map_plain = ggplot(data=minnesota, mapping = aes(x = long, y = lat)) +
   geom_polygon(color="black", fill="gray") +
+  geom_polygon(data=counties, aes(x=long, y=lat, group=group), fill=NA, color="white") +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, color=`Perch Hg`), size=1) +
   scale_color_manual(name="Perch Hg", 
                      values=c("green"="green", "yellow"="yellow", "orange"="orange", "red"="red"),
