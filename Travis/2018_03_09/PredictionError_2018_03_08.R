@@ -17,8 +17,6 @@ data <- data %>% mutate(HgPpbLog = log(HGppm*1000 + 1))
 getSSE <- function(pred, obs) {
   if(length(which(is.na(pred))) != 0 | length(which(is.na(obs))) != 0) stop("Data contains NA values.")
   if(length(pred) != length(obs)) {
-    print(pred)
-    print(obs)
     stop("Prediction length is not equal to observed length.")
   }
   return(sum(sapply(1:length(pred), function(i) { (pred[i] - obs[i])^2 })))
@@ -59,3 +57,8 @@ PE_per_site %>%
 
 PE_per_site %>%
   summarise(mean = mean(PE, na.rm=T), sd = sd(PE, na.rm=T))
+
+with(data, plot(Nofish, (perchHG - HgPpbLog)^2))
+res <- with(data, (perchHG - HgPpbLog)^2)
+mod <- with(data, lm(res ~ Nofish))
+abline(mod)
