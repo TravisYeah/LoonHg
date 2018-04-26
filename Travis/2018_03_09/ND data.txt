@@ -1,7 +1,0 @@
-    ANALYTE    min Zeros
-1:  Mercury 10.000     0
-2: Aluminum  0.930     0
-3:  Cadmium  0.005     0
-4:     Lead  0.010     0
-5: Selenium  0.200     0
-6:   Solids  0.200     0
