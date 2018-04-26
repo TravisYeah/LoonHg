@@ -11,6 +11,7 @@ Specifically, we used this code to examine Loon blood Hg concentrations were rel
 - `LoonDataClean2018_03_09.R` QAQC for the loon data and lake-perch Hg prediction join logic.
 - `LoonAnalysis2018_03_09.R` The analysis of the loon, perch Hg predctions and lake data.
 - `perch_map_2018_03_09.R` Code for joining and mapping water data with predicted perch Hg.
+- `coords/utmToDec.py` Tool for converting utm to decimal coordinates.
 
 
 ## Contact for code 
