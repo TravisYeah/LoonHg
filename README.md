@@ -5,11 +5,18 @@ Kevin P. Kenow, Richard A. Erickson, Travis J. Harrison
 This code supports the manuscript "Patterns of mercury and selenium exposure in Minnesota common loons".
 Specifically, we used this code to examine Loon blood Hg concentrations were related with predictions of Hg concentrations in standardized 12-cm whole organism yellow perch (Perca flavescens), based on fish Hg records from lakes throughout Minnesota, using the U.S. Geological Survey National Descriptive Model for Mercury in Fish.
 
+## Censored regression model
+
+- `fixingLakeID2018_03_09.R` The censored regression model, model predictions, loon-perch Hg predctions join logic and minor QAQC.
+- `LoonDataClean2018_03_09.R` QAQC for the loon data and lake-perch Hg prediction join logic.
+- `LoonAnalysis2018_03_09.R` The analysis of the loon, perch Hg predctions and lake data.
+- `perch_map_2018_03_09.R` Code for joining and mapping water data with predicted perch Hg.
+
 
 ## Contact for code 
 
-Primary code developer:  Richard A. Erickson (rerickson@usgs.gov)
-Secondary code developer: Travis J. Harrison (tharrison@usgs.gov)
+Primary code developer:  Richard A. Erickson (rerickson@usgs.gov).  
+Secondary code developer: Travis J. Harrison (tharrison@usgs.gov).
 
 
 ## Disclaimer
