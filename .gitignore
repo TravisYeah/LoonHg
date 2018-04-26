@@ -1,0 +1,17 @@
+*.Rhistory
+*.history
+*.RData
+*.DS_Store
+*.rda
+temp
+*.csv
+*.xlsx
+*.xls
+*.docx
+*.jpg
+*.jepg
+*.pdf
+*.png
+*~
+*.zip
+loons/Travis/Background/*
