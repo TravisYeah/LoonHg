@@ -1,23 +1,20 @@
 # perch_maps_v2
-.libPaths('D:/library/R')
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
-
 # load data
 perchHG=read.csv("./UseYear/perchHGPredictData2018_03_09.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
-
 library(measurements)
 library(ggmap)
 library(data.table)
 library(sqldf)
-# library(raster)
+
 library(rgdal)
 
 #read in coords
 coords=fread("./coords/coordinates.csv")
 coordsConv=fread("./coords/coordinatesConv.csv")
 coords[grep("adley", WATERWAY)]
+
 # Convert to correct decimal format
 coords[Lat != "", latitude := as.numeric(paste(substring(Lat, 1, 2), ".", substring(Lat, 3), sep=""))]
 coords[Long != "", longitude := as.numeric(paste("-",substring(Long, 1, 2), ".", substring(Long, 3), sep=""))]
