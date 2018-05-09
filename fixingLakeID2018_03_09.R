@@ -1,10 +1,7 @@
-.libPaths('D:/library/R')
 library(sqldf)
-library(data.table, lib = 'D:/library/R')
-library(ggplot2, lib = 'D:/library/R')
-library(NADA, lib = 'D:/library/R')
-
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
+library(data.table)
+library(ggplot2)
+library(NADA)
 
 ## load loon blood
 loonBlood <- fread("./inputData/LoonHGblood.csv")
