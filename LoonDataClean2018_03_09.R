@@ -1,9 +1,8 @@
-.libPaths("D:/library/R")
+
 library(data.table)
 library(lubridate)
 ## Load loon Contaminant data
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
-list.files("./RawData/")
+
 dt1 <- fread("./RawData/1409727_FINAL_EXCEL_17_Nov_14_1743.csv")
 dt2 <- fread("./RawData/1409729_FINAL_EXCEL_17_Nov_14_1740.csv")
 dt3 <- fread("./RawData/1409731_FINAL_EXCEL_17_Nov_14_1739.csv")
