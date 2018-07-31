@@ -1,5 +1,3 @@
-.libPaths("D:/library/R")
-
 ## Load libraries 
 library(data.table)
 library(psych)
@@ -9,11 +7,9 @@ library(lme4)
 library(lmerTest)
 library(lubridate)
 
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
-
 ## Load data
 
-d <- fread("./UseYear/LoonData2018_03_09.csv")
+d <- fread("LoonData2018_03_09.csv")
 
 # grab only the columns needed to analyze the data
 # And then reformat the data
@@ -46,7 +42,7 @@ perchBySex <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
                     xlab(expression("ln(Standardized perch Hg(ng/g wet weight) + 1)")) +
                         theme(strip.background = element_blank())
 perchBySex
-ggsave("./plots/perchBySex2018_03_09.pdf", perchBySex, width = 8, height = 4)
+ggsave("perchBySex2018_03_09.pdf", perchBySex, width = 8, height = 4)
 
 onlyHG <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
@@ -55,7 +51,7 @@ onlyHG <- ggplot(data = dHG2, aes(x = perchHG, y = HgLog)) +
                     xlab(expression("ln(Standardized perch Hg (ng/g wet weight) + 1)")) +
                         theme(strip.background = element_blank())
 onlyHG
-ggsave("./plots/onlyHG2018_03_09.pdf", onlyHG, width = 6, height = 4)
+ggsave("onlyHG2018_03_09.pdf", onlyHG, width = 6, height = 4)
 
 hgMass <- ggplot(data = dHG2, aes(x = Mass, y = HgLog)) +
     geom_point() + stat_smooth(method = "lm", formula = y ~ x) +
@@ -65,7 +61,7 @@ hgMass <- ggplot(data = dHG2, aes(x = Mass, y = HgLog)) +
                     xlab(expression("Mass (kg)")) +
                         theme(strip.background = element_blank())
 hgMass
-ggsave("./plots/hgMass2018_03_09.pdf", hgMass, width = 8, height = 4)
+ggsave("hgMass2018_03_09.pdf", hgMass, width = 8, height = 4)
 
 
 sexPlot <- ggplot(data = dHG2, aes(x = Sex, y = HgLog)) +
@@ -73,7 +69,7 @@ sexPlot <- ggplot(data = dHG2, aes(x = Sex, y = HgLog)) +
         xlab("Loon sex/age category") +
     geom_boxplot() + theme_bw()
 sexPlot
-ggsave("./plots/sexPlot2018_03_09.pdf", sexPlot, width = 6, height = 4)
+ggsave("sexPlot2018_03_09.pdf", sexPlot, width = 6, height = 4)
 
 ggplot(data = dHG2, aes(x = Month, y = HgLog, color = Sex)) +
     geom_point() +
@@ -83,11 +79,7 @@ ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Sex)) +
   geom_point() +
   scale_color_manual(values = c('blue', 'red', 'black'))
 
-# write.csv(file = "./FinalData/LoonDataFinalUsed.csv", x = dHG2, row.names = FALSE)
-
 # Analysis
-# dHG2 = copy(d)
-
 outA <- lm(HgLog ~ perchHG + Sex + Mass:Sex, data = dHG2)
 outB <- lm(HgLog ~ perchHG + Sex + Mass:Age, data = dHG2)
 outC <- lm(HgLog ~ perchHG + Age + Mass:Sex, data = dHG2)
@@ -108,35 +100,13 @@ confint(outB, level = 0.95)
 confint(outC, level = 0.95)
 confint(outD, level = 0.95)
 
-pdf("./plots/LoonHGresid2018_03_09.pdf")
+pdf("LoonHGresid2018_03_09.pdf")
 par(mfcol = c(2,2))
 plot(outA)
 plot(outB)
 plot(outC)
 plot(outD)
 dev.off()
-
-
-# ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Age)) + 
-#   geom_point() + stat_smooth(method = 'lm')
-# 
-# ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Sex)) + 
-#   geom_point() + stat_smooth(method = 'lm')
-# 
-# ggplot(data = dHG2, aes(x = Mass, y = HgLog, color = Sex,
-#                         size = perchHG)) + 
-#   geom_point() + stat_smooth(method = 'lm') +
-#   scale_radius(trans = 'sqrt')
-# 
-# ggplot(data = dHG2, aes(x = perchHG, y = HgLog,color = Sex)) + 
-#   geom_point() + stat_smooth(method = 'lm')
-
-# dHG2[ , .(mean(Mass)), by = .(Sex)]
-# 
-# dHG2[ , .(mean(HgLog)), by = .(Sex)]
-# dHG2[ , .(mean(HgLog)), by = .(Age)]
-# dHG2[ , .(mean(HgLog)), by = .(Sex, Age)]
-
 
 confint(outA, level = 0.95)
 
@@ -146,7 +116,6 @@ confint(outA, level = 0.95)
 
 Lake <- dHG2[ , list(
     perchHGLake = mean(perchHG),
-    # HgLogLake = mean(HgLog),
     ALKLake = mean(ALK),
     SECCHILake = mean(SECCHI),
     PHLake = mean(PH),
@@ -156,11 +125,9 @@ Lake <- dHG2[ , list(
     AreaLake = mean(AREA)
     ), by = LakeID]
 
-# Lake[ order(perchHGLake, decreasing = TRUE), list(Lake, perchHGLake, MAXdepthLake)]
-
 # plot correlations
 ggpairsplot = ggpairs(Lake[ , -1, with = FALSE])
-ggsave("./plots/Hgpairs2018_03_09.pdf", ggpairsplot, width = 8, height = 8)
+ggsave("Hgpairs2018_03_09.pdf", ggpairsplot, width = 8, height = 8)
 
 corr.test(Lake[ , -1, with = FALSE])
 
@@ -183,7 +150,7 @@ HgSeHist <- ggplot(dHg, aes(x = Selenium)) + geom_histogram() +
     scale_x_continuous(trans = 'log') +
         facet_grid( . ~ Sex) + theme_minimal()
 print(HgSeHist)
-ggsave("./plots/HgSeHist2018_03_09.pdf", HgSeHist, width = 6, height = 4)
+ggsave("HgSeHist2018_03_09.pdf", HgSeHist, width = 6, height = 4)
 
 dHg[ , HgLog := log(Mercury)]
 dHg[ , SeLog := log(Selenium)]
@@ -192,7 +159,7 @@ dHg[ , LogPpmSe := log(Selenium*1000 )]
 HgSeBoxplot <- ggplot(dHg, aes(x = Sex, y = Selenium)) + geom_boxplot() + 
 	theme_minimal()
 print(HgSeBoxplot)
-ggsave("./plots/HgSeBoxplot2018_03_09.pdf", HgSeBoxplot, width = 6, height = 4)
+ggsave("HgSeBoxplot2018_03_09.pdf", HgSeBoxplot, width = 6, height = 4)
 
 
 
@@ -214,7 +181,7 @@ sexPlotSe <- ggplot(data = dSe, aes(x = Sex, y = SeLog)) +
         xlab("Loon sex/age category") + 
     geom_boxplot() + theme_bw()
 sexPlotSe
-ggsave("./plots/sexPlotSe2018_03_09.pdf", sexPlotSe, width = 6, height = 4)
+ggsave("sexPlotSe2018_03_09.pdf", sexPlotSe, width = 6, height = 4)
 
 #
 sexPlotSe <- ggplot(data = dSe, aes(x = Sex, y = SeLog)) +
@@ -222,7 +189,7 @@ sexPlotSe <- ggplot(data = dSe, aes(x = Sex, y = SeLog)) +
   xlab("Loon sex/age category") + 
   geom_boxplot() + theme_bw()
 sexPlotSe
-ggsave("./plots/sexPlotSe2018_03_09.pdf", sexPlotSe, width = 6, height = 4)
+ggsave("sexPlotSe2018_03_09.pdf", sexPlotSe, width = 6, height = 4)
 expression("ln(Loon blood Se ("*mu*"g/g wet weight))")
 
 
@@ -233,7 +200,7 @@ sexPlotSeVsHg <- ggplot(data = dSe, aes(x = HgLog, y = LogPpmSe)) +
   geom_point() + stat_smooth(method = 'lm') +
   facet_grid( . ~ Sex) +
   theme_bw()
-ggsave("./plots/sexPlotSeVsHgUnkown2018_03_09.pdf", sexPlotSeVsHg, width = 6, height = 4)
+ggsave("sexPlotSeVsHgUnkown2018_03_09.pdf", sexPlotSeVsHg, width = 6, height = 4)
 
 
 cor(dSe$SeLog, dSe$HgLog)

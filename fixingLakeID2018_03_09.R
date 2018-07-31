@@ -1,18 +1,15 @@
-.libPaths('D:/library/R')
 library(sqldf)
-library(data.table, lib = 'D:/library/R')
-library(ggplot2, lib = 'D:/library/R')
-library(NADA, lib = 'D:/library/R')
-
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
+library(data.table)
+library(ggplot2)
+library(NADA)
 
 ## load loon blood
-loonBlood <- fread("./inputData/LoonHGblood.csv")
+loonBlood <- fread("LoonHGblood.csv")
 loonBlood[ , LakeID := gsub( "^0", "", LakeID)]
 
 ## Load data and reformat it
-fishDataRaw <- fread("./inputData/fishUse.csv")
-fishData <- fread("./inputData/fishUse.csv")
+fishDataRaw <- fread("fishUse.csv")
+fishData <- fread("fishUse.csv")
 
 ####################### Edit lake codes
 
@@ -225,7 +222,7 @@ stopCluster(cl)
 all_results = cbind(fishData, perchHG = cluster_results)
 
 #write results to file
-write.csv(all_results, "./UseYear/perchHGPredictData2018_03_09.csv", row.names = F)
+write.csv(all_results, "perchHGPredictData2018_03_09.csv", row.names = F)
 
 # Find nearest fish sample year (UseYear) to loon sample year for each lake
 loonBlood[, UseYear := 0]
@@ -282,7 +279,7 @@ results[grep("Monongalia.*crow", results$Lake, ignore.case = T), "LakeID"] = "34
 results <- results[, -c(1)]
 
 # Write perch & loon joined data/results for loon analysis
-write.csv(results, "./UseYear/perchLoonHGData2018_03_09.csv", row.names = FALSE)
+write.csv(results, "perchLoonHGData2018_03_09.csv", row.names = FALSE)
 
 #remove NA
 results <- results[!is.na(results$perchHG), ]
@@ -291,4 +288,4 @@ results <- results[!is.na(results$perchHG), ]
 perchHGAvg = data.frame(sqldf("SELECT LakeID, Year, AVG(perchHG) perchHG FROM results GROUP BY LakeID, Year"))
 
 # Write loonData
-write.csv(perchHGAvg, "./UseYear/perchHGAvg2018_03_09.csv", row.names = F)
+write.csv(perchHGAvg, "perchHGAvg2018_03_09.csv", row.names = F)

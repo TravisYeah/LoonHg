@@ -1,9 +1,6 @@
 # perch_maps_v2
-.libPaths('D:/library/R')
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
-
 # load data
-perchHG=read.csv("./UseYear/perchHGPredictData2018_03_09.csv")
+perchHG=read.csv("perchHGPredictData2018_03_09.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
 
@@ -15,8 +12,8 @@ library(sqldf)
 library(rgdal)
 
 #read in coords
-coords=fread("./coords/coordinates.csv")
-coordsConv=fread("./coords/coordinatesConv.csv")
+coords=fread("coordinates.csv")
+coordsConv=fread("coordinatesConv.csv")
 coords[grep("adley", WATERWAY)]
 # Convert to correct decimal format
 coords[Lat != "", latitude := as.numeric(paste(substring(Lat, 1, 2), ".", substring(Lat, 3), sep=""))]
@@ -36,7 +33,7 @@ lakeHG = lakeHG[!is.na(lakeHG$WATERWAY),]
 lakeHG = lakeHG[!is.na(lakeHG$longitude) & !is.na(lakeHG$latitude), ]
 
 #write results
-write.csv(lakeHG, "./coords/coordsData2018_03_09.csv", row.names=F)
+write.csv(lakeHG, "coordsData2018_03_09.csv", row.names=F)
 
 #categorize perch Hg colors
 categorizeColor <- function(xs) {
@@ -87,7 +84,7 @@ point_map_plain = ggplot(data=minnesota, mapping = aes(x = long, y = lat)) +
   xlab("Longitude") +
   ylab("Latitude")
 point_map_plain
-pdf("./Maps/perch_Hg_map_2018_03_23.pdf", width=8.5, height=11)
+pdf("perch_Hg_map_2018_03_23.pdf", width=8.5, height=11)
 print(point_map_plain)
 dev.off()
 

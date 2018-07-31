@@ -1,12 +1,9 @@
-.libPaths("D:/library/R")
 library(data.table)
 library(lubridate)
 ## Load loon Contaminant data
-setwd("D:/Projects/USGS_R/loons/Travis/2018_03_09")
-list.files("./RawData/")
-dt1 <- fread("./RawData/1409727_FINAL_EXCEL_17_Nov_14_1743.csv")
-dt2 <- fread("./RawData/1409729_FINAL_EXCEL_17_Nov_14_1740.csv")
-dt3 <- fread("./RawData/1409731_FINAL_EXCEL_17_Nov_14_1739.csv")
+dt1 <- fread("1409727_FINAL_EXCEL_17_Nov_14_1743.csv")
+dt2 <- fread("1409729_FINAL_EXCEL_17_Nov_14_1740.csv")
+dt3 <- fread("1409731_FINAL_EXCEL_17_Nov_14_1739.csv")
 
 dtAll <- rbind(dt1, dt2, dt3)
 head(dtAll)
@@ -43,7 +40,7 @@ dtUse[ , unique(Lake)]
 dtUse <- dtUse[-grep("1138-06641", dtUse$Band),]
 
 ## CLEAN UP Lake data and names
-lakeKey <- fread("./RawData/lakeSubs.csv")
+lakeKey <- fread("lakeSubs.csv")
 lakeKey
 
 dtUse[ , unique(Band)]
@@ -57,7 +54,7 @@ dtUse[ Lake == "Stumpf Lake", Lake := "Stump Lake"]
 dtUse[, Lake := gsub("( Lake)|( Bay)|(Lake )", "", Lake)]
 
 ## Read in Lake ID nums
-ld <- fread("./RawData/LakeIDName.csv")
+ld <- fread("LakeIDName.csv")
 setnames(ld, c("Lake", "rm1", "LakeID", "rm2"))
 ld[ , c("rm1", "rm2") := NULL]
 setkey(ld, "Lake")
@@ -88,8 +85,7 @@ dtUse[ grep("Crow River", SAMPLENAME), Lake := "Monongalia - Middle Fork Crow Ri
 dtUse[ grep("Crow River", Lake), LakeID := '34015802']
 
 ## Merge in Band info
-list.files("./RawData/")
-band <- fread("./RawData/LoonBands_revised 26jul17.csv")
+band <- fread("LoonBands_revised 26jul17.csv")
 ## Remove loon entires Kevin marked to remove
 band <- copy(band[ Remove == 0,])
 setnames(band, "Body (mm)", "BodyLength")
@@ -154,7 +150,7 @@ dtWide[ grep("Loon", Lake), LakeID :=  '111111111']
 ############################################################
 ############################################################
 ## load in water quliaty data
-dWQ <- fread("./WQ Model Data/WATERQUALITY_ALL_LAKES_20July2017.csv")
+dWQ <- fread("WATERQUALITY_ALL_LAKES_20July2017.csv")
 
 ## Change loon marsh to have the same dummy ID used elsewhere in code
 dWQ[ grep("LOON", LOC_DESC), LOC_ID := '111111111']
@@ -276,7 +272,7 @@ dWQ3[ , Date := as_date(SAMPLE_DATE)]
 dWQ3[ , Month:= month(Date)]
 
 # Write loon data for fish model
-write.csv(x = dtWide, file = "./inputData/LoonHGblood.csv")
+write.csv(x = dtWide, file = "LoonHGblood.csv")
 
 ########################################
 ###### CORRECT WATER QUALITY ID's ######
@@ -334,7 +330,7 @@ write.csv(x = dWQ5, file = "WaterQualityCheck27July17_2018_03_09.csv", row.names
 ###################
 ###################
 
-perchHG <- fread("./UseYear/perchHGAvg2018_03_09.csv")
+perchHG <- fread("perchHGAvg2018_03_09.csv")
 
 # Create lakeYearID for perch/water data
 perchHG[ , lakeYearID := paste(LakeID, Year, sep = "_")]
@@ -367,5 +363,5 @@ dtFour[LakeID == 69011800 & is.na(Mass), Mass := 1.27]
 dtFour[LakeID == 69037100 & is.na(Mass), Mass := .94]
 
 #save results
-write.csv(file = "./UseYear/LoonData2018_03_09.csv",
+write.csv(file = "LoonData2018_03_09.csv",
           x = dtFour, row.names = FALSE)
