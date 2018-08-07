@@ -1,6 +1,6 @@
 library(data.table)
 library(lubridate)
-## Load loon Contaminant data
+## Load loon Contaminant data https://doi.org/10.5066/P9TDCH3F
 dt1 <- fread("1409727_FINAL_EXCEL_17_Nov_14_1743.csv")
 dt2 <- fread("1409729_FINAL_EXCEL_17_Nov_14_1740.csv")
 dt3 <- fread("1409731_FINAL_EXCEL_17_Nov_14_1739.csv")

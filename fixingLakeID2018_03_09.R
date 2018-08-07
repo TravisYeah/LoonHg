@@ -3,7 +3,9 @@ library(data.table)
 library(ggplot2)
 library(NADA)
 
-## load loon blood
+# Data at https://doi.org/10.5066/P9TDCH3F
+
+## Load loon blood
 loonBlood <- fread("LoonHGblood.csv")
 loonBlood[ , LakeID := gsub( "^0", "", LakeID)]
 

@@ -7,7 +7,7 @@ library(lme4)
 library(lmerTest)
 library(lubridate)
 
-## Load data
+## Load data https://doi.org/10.5066/P9TDCH3F
 
 d <- fread("LoonData2018_03_09.csv")
 

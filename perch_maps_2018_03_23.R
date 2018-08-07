@@ -1,5 +1,5 @@
 # perch_maps_v2
-# load data
+# load data https://doi.org/10.5066/P9QHT2DG
 perchHG=read.csv("perchHGPredictData2018_03_09.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
