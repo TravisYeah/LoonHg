@@ -1,18 +1,23 @@
 # perch_maps_v2
 # load data https://doi.org/10.5066/P9QHT2DG
+setwd('C:/Users/tharrison/Files/projects/loons/UseYear')
 perchHG=read.csv("perchHGPredictData2018_03_09.csv")
 
 ################### CREATE LAT/LONG MAP HERE #########################
+states <- ggplot2::map_data("state")
+minnesota <- subset(states, region == "minnesota")
+counties <- subset(ggplot2::map_data("county"), region == "minnesota")
 library(measurements)
+library(maps)
 library(ggmap)
 library(data.table)
 library(sqldf)
-
+# library(ggplot2)
 library(rgdal)
 
 #read in coords
-coords=fread("coordinates.csv")
-coordsConv=fread("coordinatesConv.csv")
+coords=fread("../coords/coordinates.csv")
+coordsConv=fread("../coords/coordinatesConv.csv")
 coords[grep("adley", WATERWAY)]
 
 # Convert to correct decimal format
@@ -61,22 +66,17 @@ lakeHG <- subset(lakeHG, !(lakeHG$WATERWAY %in% c("SAGANAGA","BOOT","WASHBURN","
 #order data by perchHg
 lakeHG <- lakeHG[order(lakeHG$perchHG),]
 
-#convert map to raster
-states <- map_data("state")
-minnesota <- subset(states, region == "minnesota")
-counties <- subset(map_data("county"), region == "minnesota")
-
 # plain plot of perch hg points
 HgPpb <- (exp(lakeHG$perchHG)-1)/1000
 `Perch Hg` <- categorizeColor(HgPpb)
-point_map_plain = ggplot(data=minnesota, mapping = aes(x = long, y = lat)) +
+point_map_plain <- ggplot(data=minnesota, mapping = aes(x = long, y = lat)) +
   geom_polygon(color="black", fill="gray") +
   geom_polygon(data=counties, aes(x=long, y=lat, group=group), fill=NA, color="white") +
   geom_point(data=lakeHG, aes(x=longitude, y=latitude, color=`Perch Hg`), size=1) +
   scale_color_manual(name="Perch Hg", 
                      values=c("green"="green", "yellow"="yellow", "orange"="orange", "red"="red"),
                      breaks=c("green", "yellow", "orange", "red"),
-                     labels=c("< 0.093 ug/g", "0.093 to < 0.167 ug/g", "0.167 to < 0.372 ug/g", "> 0.372 ug/g")) +
+                     labels=c(expression(paste("< 0.093 ",mu,"g/g")), expression(paste("0.093 to < 0.167 ",mu,"g/g")), expression(paste("0.167 to < 0.372 ",mu,"g/g")), expression(paste("> 0.372 ",mu,"g/g")))) +
   theme(legend.position = c(.825, .375), panel.border = element_blank(), panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"),
         panel.background = element_blank()) + 
@@ -84,7 +84,7 @@ point_map_plain = ggplot(data=minnesota, mapping = aes(x = long, y = lat)) +
   xlab("Longitude") +
   ylab("Latitude")
 point_map_plain
-pdf("perch_Hg_map_2018_03_23.pdf", width=8.5, height=11)
+pdf("perch_Hg_map_2018_12_06.pdf", width=8.5, height=11)
 print(point_map_plain)
 dev.off()
 

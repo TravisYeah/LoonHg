@@ -3,7 +3,7 @@ import csv
 
 dictObj = []
 
-with open("D:/Projects/loons/coords/coordinates.csv", "rb") as csvfile:
+with open("D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/coords/coordinates.csv", "rb") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         dictObj.append(row)
@@ -14,7 +14,7 @@ for row in dictObj:
         row["X_Utm"] = coord[0]
         row["Y_Utm"] = coord[1]
 
-with open("D:/Projects/loons/coords/coordinatesConv.csv", "wb") as csvfile:
+with open("D:/Projects/USGS_R/loons/Travis/Final Re-Work 2017-12-08/coords/coordinatesConv.csv", "wb") as csvfile:
     fieldnames = ('X_Utm', 'Y_Utm', 'Long', 'Lat', 'DOWID', 'WATERWAY')
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 

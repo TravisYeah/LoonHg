@@ -1,11 +1,10 @@
 # Code to analyze loon blood mercury
 
-Kevin P. Kenow, Richard A. Erickson, Travis J. Harrison
+Kenow, K.P., Erickson, R.A., Hrrison, T.J. 2018. Code to analyze loon blood mercury; U.S. Geological Survey code release, https://doi.org/10.5066/P9QHT2DG
 
-This code supports the manuscript "Patterns of mercury and selenium exposure in Minnesota common loons".
+This code supports the manuscript Kenow KP, Houdek SC, Fara LJ, Erickson RA, Gray BR, Harrison TJ, Monson BA, Henderson CL.  In Press.  Patterns of mercury and selenium exposure in Minnesota common loons.  Environ Toxicol Chem XXXX:XX-XX; DOI: 10.1002/etc.4331.
 Specifically, we used this code to examine Loon blood Hg concentrations were related with predictions of Hg concentrations in standardized 12-cm whole organism yellow perch (Perca flavescens), based on fish Hg records from lakes throughout Minnesota, using the U.S. Geological Survey National Descriptive Model for Mercury in Fish.
 
-Code: https://doi.org/10.5066/P9QHT2DG  
 Data: https://doi.org/10.5066/P9TDCH3F
 
 ## Code files 
